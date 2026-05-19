@@ -9,10 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LacakRouteImport } from './routes/lacak'
 import { Route as JokiRouteImport } from './routes/joki'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopupSlugRouteImport } from './routes/topup.$slug'
 
+const LacakRoute = LacakRouteImport.update({
+  id: '/lacak',
+  path: '/lacak',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const JokiRoute = JokiRouteImport.update({
   id: '/joki',
   path: '/joki',
@@ -32,35 +38,46 @@ const TopupSlugRoute = TopupSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/joki': typeof JokiRoute
+  '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/joki': typeof JokiRoute
+  '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/joki': typeof JokiRoute
+  '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/joki' | '/topup/$slug'
+  fullPaths: '/' | '/joki' | '/lacak' | '/topup/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/joki' | '/topup/$slug'
-  id: '__root__' | '/' | '/joki' | '/topup/$slug'
+  to: '/' | '/joki' | '/lacak' | '/topup/$slug'
+  id: '__root__' | '/' | '/joki' | '/lacak' | '/topup/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JokiRoute: typeof JokiRoute
+  LacakRoute: typeof LacakRoute
   TopupSlugRoute: typeof TopupSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/lacak': {
+      id: '/lacak'
+      path: '/lacak'
+      fullPath: '/lacak'
+      preLoaderRoute: typeof LacakRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/joki': {
       id: '/joki'
       path: '/joki'
@@ -88,6 +105,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JokiRoute: JokiRoute,
+  LacakRoute: LacakRoute,
   TopupSlugRoute: TopupSlugRoute,
 }
 export const routeTree = rootRouteImport
