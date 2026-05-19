@@ -84,17 +84,29 @@ export function HeroCarousel() {
             </div>
           </div>
 
-          {/* Image */}
-          <div className="relative h-56 md:h-auto">
-            <img
-              src={heroImg}
-              alt="Karakter gaming neon futuristik"
-              width={1920}
-              height={1024}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-card via-card/60 to-transparent md:from-card md:via-card/40" />
+          {/* Dynamic grid from first 6 games */}
+          <div className="relative hidden md:flex items-center justify-center p-6 lg:p-10">
+            <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-w-md">
+              {games.slice(0, 6).map((g, i) => (
+                <div
+                  key={g.slug}
+                  className="aspect-[3/4] overflow-hidden rounded-lg border border-primary/60 bg-card/40 shadow-[0_0_18px_-6px_var(--neon-purple)] animate-float opacity-0 animate-fade-in"
+                  style={{
+                    animationDelay: `${i * 120}ms`,
+                    animationFillMode: "forwards",
+                    ['--float-delay' as string]: `${i * 0.4}s`,
+                  }}
+                >
+                  <img
+                    src={g.cover}
+                    alt={`game cover ${g.name}`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
+
         </div>
 
         {/* Decorative neon corners */}
