@@ -1,9 +1,19 @@
-import { Link } from "@tanstack/react-router";
-import { Search, Menu, Gamepad2, X } from "lucide-react";
-import { useState } from "react";
+import { Link, useRouter } from "@tanstack/react-router";
+import { Search, Menu, Gamepad2, X, User, LogOut, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 const navItems = [
   { label: "Beranda", href: "/" },
@@ -13,6 +23,28 @@ const navItems = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    toast.success("Berhasil keluar.");
+    router.navigate({ to: "/" });
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -51,12 +83,36 @@ export function Navbar() {
             ))}
           </nav>
 
-          <Button
-            asChild
-            className="hidden sm:inline-flex bg-gradient-neon text-primary-foreground font-bold hover:opacity-90 transition-all hover:shadow-[0_0_24px_-2px_var(--neon-purple)] rounded-full px-6 h-11"
-          >
-            <Link to="/auth">Masuk / Daftar</Link>
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="hidden sm:flex gap-2 rounded-full h-11 border-border/60 hover:bg-input/60 transition-all font-semibold">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="truncate max-w-[120px]">{user.email}</span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-card border-border/60 rounded-xl shadow-2xl">
+                <DropdownMenuLabel>Akun Saya</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border/60" />
+                <DropdownMenuItem className="text-muted-foreground truncate opacity-80 cursor-default focus:bg-transparent">
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border/60" />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Keluar</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button
+              asChild
+              className="hidden sm:inline-flex bg-gradient-neon text-primary-foreground font-bold hover:opacity-90 transition-all hover:shadow-[0_0_24px_-2px_var(--neon-purple)] rounded-full px-6 h-11"
+            >
+              <Link to="/auth">Masuk / Daftar</Link>
+            </Button>
+          )}
         </div>
 
         {/* Mobile menu */}
@@ -79,12 +135,32 @@ export function Navbar() {
                   {item.label}
                 </Link>
               ))}
-              <Button
-                asChild
-                className="mt-4 bg-gradient-neon text-primary-foreground font-semibold"
-              >
-                <Link to="/auth" onClick={() => setOpen(false)}>Masuk / Daftar</Link>
-              </Button>
+              {user ? (
+                <>
+                  <div className="mt-4 p-3 rounded-xl bg-secondary/30 border border-border/40">
+                    <p className="text-xs text-muted-foreground mb-1">Masuk sebagai:</p>
+                    <p className="text-sm font-semibold truncate text-foreground">{user.email}</p>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      setOpen(false);
+                      handleLogout();
+                    }}
+                    variant="outline"
+                    className="mt-2 w-full text-red-500 border-red-500/20 hover:bg-red-500/10 justify-start"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Keluar
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  asChild
+                  className="mt-4 bg-gradient-neon text-primary-foreground font-semibold"
+                >
+                  <Link to="/auth" onClick={() => setOpen(false)}>Masuk / Daftar</Link>
+                </Button>
+              )}
             </nav>
           </SheetContent>
         </Sheet>

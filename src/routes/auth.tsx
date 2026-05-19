@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Gamepad2, ArrowLeft, Mail, Lock, User, Phone } from "lucide-react";
+import { Gamepad2, ArrowLeft, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -39,11 +41,66 @@ const iconClass =
   "absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-red-500";
 
 function AuthPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Form State
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [loginError, setLoginError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // mock submit
+    setIsLoading(true);
+    setLoginError("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setLoginError("Email atau password salah!");
+      setIsLoading(false);
+    } else {
+      toast.success("Berhasil masuk!");
+      router.navigate({ to: "/" });
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      toast.error("Gagal mendaftar: " + error.message);
+      setIsLoading(false);
+      return;
+    }
+
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert([
+        { id: data.user.id, full_name: fullName, whatsapp: whatsapp }
+      ]);
+      
+      if (profileError) {
+         toast.error("Gagal menyimpan profil: " + profileError.message);
+      } else {
+         toast.success("Pendaftaran Berhasil! Silakan cek email untuk verifikasi (jika diaktifkan) atau langsung masuk.");
+         setActiveTab("login");
+         setPassword("");
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   return (
@@ -108,12 +165,12 @@ function AuthPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5 relative">
+          <div>
             {/* =======================================
                 LOGIN TAB
                 ======================================= */}
             {activeTab === "login" && (
-              <div className="animate-in fade-in slide-in-from-left-2 duration-300">
+              <form onSubmit={handleLogin} className="animate-in fade-in slide-in-from-left-2 duration-300 space-y-5 relative">
                 <div className="mb-6 text-center">
                   <h2 className="text-xl font-bold text-foreground mb-1.5">
                     Selamat datang kembali, Gamer!
@@ -128,7 +185,9 @@ function AuthPage() {
                     <Mail className={iconClass} />
                     <input
                       type="text"
-                      placeholder="Email / Username"
+                      placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className={inputClass}
                       required
                     />
@@ -140,6 +199,8 @@ function AuthPage() {
                       <input
                         type="password"
                         placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         className={inputClass}
                         required
                       />
@@ -155,20 +216,32 @@ function AuthPage() {
                   </div>
                 </div>
 
+                {loginError && (
+                  <p className="text-sm font-semibold text-red-500 text-center">{loginError}</p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98]"
+                  disabled={isLoading}
+                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Masuk
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    "Masuk"
+                  )}
                 </button>
-              </div>
+              </form>
             )}
 
             {/* =======================================
                 REGISTER TAB
                 ======================================= */}
             {activeTab === "register" && (
-              <div className="animate-in fade-in slide-in-from-right-2 duration-300">
+              <form onSubmit={handleRegister} className="animate-in fade-in slide-in-from-right-2 duration-300 space-y-5 relative">
                 <div className="mb-6 text-center">
                   <h2 className="text-xl font-bold text-foreground mb-1.5">
                     Buat Akun Baru
@@ -184,27 +257,20 @@ function AuthPage() {
                     <input
                       type="text"
                       placeholder="Nama Lengkap"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       className={inputClass}
                       required
                     />
                   </div>
 
                   <div className={`group ${inputWrapperClass}`}>
-                    {/* Phone/WA icon */}
-                    <svg
-                      viewBox="0 0 24 24"
-                      className={iconClass}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                    </svg>
+                    <Phone className={iconClass} />
                     <input
                       type="tel"
                       placeholder="Nomor WhatsApp"
+                      value={whatsapp}
+                      onChange={(e) => setWhatsapp(e.target.value)}
                       className={inputClass}
                       required
                     />
@@ -215,6 +281,8 @@ function AuthPage() {
                     <input
                       type="email"
                       placeholder="Email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className={inputClass}
                       required
                     />
@@ -225,6 +293,8 @@ function AuthPage() {
                     <input
                       type="password"
                       placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className={inputClass}
                       required
                     />
@@ -233,13 +303,21 @@ function AuthPage() {
 
                 <button
                   type="submit"
-                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98]"
+                  disabled={isLoading}
+                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  Daftar Sekarang
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                      Memproses...
+                    </>
+                  ) : (
+                    "Daftar Sekarang"
+                  )}
                 </button>
-              </div>
+              </form>
             )}
-          </form>
+          </div>
 
           {/* =======================================
               SOCIAL LOGIN (BOTH TABS)
