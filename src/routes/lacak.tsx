@@ -10,6 +10,7 @@ import {
   Loader2,
   Search,
 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/lacak")({
   head: () => ({
@@ -34,7 +35,7 @@ function LacakPage() {
   const [searchResult, setSearchResult] = useState<any>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!invoice.trim()) return;
 
@@ -42,35 +43,41 @@ function LacakPage() {
     setHasSearched(true);
     setSearchResult(null);
 
-    // Simulate API delay
-    setTimeout(() => {
-      // Mock Data
-      setSearchResult({
-        invoiceNo: invoice.toUpperCase(),
-        gameName: "Mobile Legends",
-        productName: "257 Diamonds",
-        status: "sedang_diproses", // could be 'selesai'
-        date: new Date().toLocaleString("id-ID", {
-          dateStyle: "long",
-          timeStyle: "short",
-        }),
-        paymentMethod: "QRIS",
-        totalPrice: 75000,
-      });
+    try {
+      const { data, error } = await supabase
+        .from("topup_orders")
+        .select("*")
+        .eq("invoice_id", invoice.trim().toUpperCase())
+        .single();
+
+      if (error || !data) {
+        setSearchResult(null);
+      } else {
+        setSearchResult(data);
+      }
+    } catch (err) {
+      console.error(err);
+      setSearchResult(null);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
+
+  const lowerStatus = searchResult?.status?.toLowerCase() || "";
 
   const steps = [
     { label: "Pesanan Dibuat", status: "completed" },
-    { label: "Menunggu Pembayaran", status: "completed" },
+    { 
+      label: "Menunggu Pembayaran", 
+      status: lowerStatus.includes("proses") || lowerStatus === "selesai" ? "completed" : (lowerStatus.includes("menunggu") ? "active" : "completed") 
+    },
     {
       label: "Proses Pengiriman / Joki",
-      status: searchResult?.status === "selesai" ? "completed" : "active",
+      status: lowerStatus === "selesai" ? "completed" : (lowerStatus.includes("proses") ? "active" : "pending"),
     },
     {
       label: "Selesai",
-      status: searchResult?.status === "selesai" ? "completed" : "pending",
+      status: lowerStatus === "selesai" ? "completed" : "pending",
     },
   ];
 
@@ -159,10 +166,10 @@ function LacakPage() {
                   </div>
                   <div>
                     <h2 className="text-sm font-medium text-muted-foreground">
-                      {searchResult.gameName}
+                      {searchResult.game_name}
                     </h2>
                     <p className="text-base font-bold text-foreground">
-                      {searchResult.productName}
+                      {searchResult.nominal}
                     </p>
                   </div>
                 </div>
@@ -170,14 +177,16 @@ function LacakPage() {
                 <div
                   className={`shrink-0 rounded-full border px-3 py-1 text-xs font-bold uppercase tracking-wider
                   ${
-                    searchResult.status === "selesai"
+                    lowerStatus === "selesai"
                       ? "border-green-500/30 bg-green-500/10 text-green-500"
                       : "border-yellow-500/30 bg-yellow-500/10 text-yellow-500"
                   }`}
                 >
-                  {searchResult.status === "selesai"
+                  {lowerStatus === "selesai"
                     ? "Selesai"
-                    : "Sedang Diproses"}
+                    : lowerStatus.includes("proses")
+                    ? "Sedang Diproses"
+                    : "Menunggu Pembayaran"}
                 </div>
               </div>
 
@@ -185,25 +194,28 @@ function LacakPage() {
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">Nomor Invoice</p>
                   <p className="font-semibold text-foreground tracking-wide">
-                    {searchResult.invoiceNo}
+                    {searchResult.invoice_id}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">Tanggal Transaksi</p>
                   <p className="font-semibold text-foreground">
-                    {searchResult.date}
+                    {new Date(searchResult.created_at).toLocaleString("id-ID", {
+                      dateStyle: "long",
+                      timeStyle: "short",
+                    })}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">Metode Pembayaran</p>
                   <p className="font-semibold text-foreground">
-                    {searchResult.paymentMethod}
+                    {searchResult.payment_method}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">Total Harga</p>
                   <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
-                    {formatRupiah(searchResult.totalPrice)}
+                    {formatRupiah(searchResult.total_price)}
                   </p>
                 </div>
               </div>
