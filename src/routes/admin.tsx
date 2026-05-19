@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import {
@@ -8,6 +8,7 @@ import {
   LogOut,
   RefreshCcw,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -17,9 +18,20 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminDashboard() {
+  const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState("topup");
+
+  useEffect(() => {
+    // PROTECTED ROUTE CHECK
+    const isLoggedIn = localStorage.getItem("isAdminLoggedIn");
+    if (isLoggedIn !== "true") {
+      router.navigate({ to: "/admin-login" });
+    } else {
+      fetchOrders();
+    }
+  }, []);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -41,9 +53,11 @@ function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const handleLogout = () => {
+    localStorage.removeItem("isAdminLoggedIn");
+    toast.success("Berhasil keluar dari Admin Portal");
+    router.navigate({ to: "/admin-login" });
+  };
 
   const handleStatusChange = async (invoiceId: string, newStatus: string) => {
     try {
@@ -61,9 +75,15 @@ function AdminDashboard() {
         .eq("invoice_id", invoiceId);
 
       if (error) throw error;
+      
+      toast.success("Status Diperbarui", {
+        description: `Pesanan ${invoiceId} menjadi ${newStatus}.`,
+      });
     } catch (err) {
       console.error("Update Error:", err);
-      alert("Gagal memperbarui status ke database.");
+      toast.error("Gagal memperbarui status", {
+        description: "Silakan coba lagi.",
+      });
       fetchOrders(); // Revert back jika gagal
     }
   };
@@ -147,13 +167,13 @@ function AdminDashboard() {
 
         {/* Footer Sidebar */}
         <div className="p-4 border-t border-border/40">
-          <Link
-            to="/"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all"
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all cursor-pointer"
           >
             <LogOut className="h-4 w-4" />
             Keluar
-          </Link>
+          </button>
         </div>
       </aside>
 

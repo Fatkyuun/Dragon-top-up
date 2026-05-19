@@ -4,6 +4,7 @@ import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react"
 import { games } from "@/lib/games";
 import { getTopUpData } from "@/lib/topup-data";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/topup/$slug")({
   head: ({ params }) => {
@@ -66,14 +67,16 @@ function TopUpDetailPage() {
         total_price: selectedPrice,
       });
 
-      if (error) throw error;
-      
-      alert(`Pesanan berhasil dibuat!\nNomor Invoice Anda: ${invoiceId}\nSilakan salin nomor ini untuk melacak pesanan.`);
+      toast.success("Pesanan berhasil disimpan!", {
+        description: `Nomor Invoice: ${invoiceId}`,
+      });
       router.navigate({ to: "/lacak" });
     } catch (err) {
       console.error("Supabase Insert Error:", err);
       console.log(err);
-      alert("Terjadi kesalahan saat menyimpan pesanan. Silakan periksa console untuk detailnya.");
+      toast.error("Gagal menyimpan pesanan", {
+        description: "Silakan coba beberapa saat lagi.",
+      });
     } finally {
       setIsSubmitting(false);
     }
