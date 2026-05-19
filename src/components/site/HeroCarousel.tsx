@@ -1,0 +1,106 @@
+import { useEffect, useState } from "react";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import heroImg from "@/assets/hero-1.jpg";
+
+const slides = [
+  {
+    eyebrow: "Promo Spesial",
+    title: "Top Up Cepat, Joki Aman & Terpercaya!",
+    subtitle:
+      "Ribuan gamer sudah pakai NeonTopUp. Proses dalam hitungan detik, harga termurah, garansi anti-ban.",
+    cta: "Lihat Semua Game",
+  },
+  {
+    eyebrow: "Joki Profesional",
+    title: "Naik Rank Tanpa Drama 🚀",
+    subtitle: "Tim joki ber-rating tinggi siap bawa akun kamu ke tier idaman dengan aman.",
+    cta: "Mulai Sekarang",
+  },
+  {
+    eyebrow: "Diskon Hari Ini",
+    title: "Cashback Hingga 15% Pakai QRIS",
+    subtitle: "Setiap transaksi otomatis dapet cashback ke saldo. Berlaku semua game.",
+    cta: "Klaim Promo",
+  },
+];
+
+export function HeroCarousel() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  const slide = slides[index];
+
+  return (
+    <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
+      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon">
+        <div className="grid md:grid-cols-2 min-h-[360px] md:min-h-[440px]">
+          {/* Text */}
+          <div className="relative z-10 flex flex-col justify-center gap-5 p-6 sm:p-10 md:p-12">
+            <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+              <Sparkles className="h-3.5 w-3.5" />
+              {slide.eyebrow}
+            </span>
+            <h1
+              key={slide.title}
+              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] animate-fade-in"
+            >
+              <span className="text-gradient-neon">{slide.title}</span>
+            </h1>
+            <p className="max-w-md text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button
+                size="lg"
+                className="bg-gradient-neon font-semibold text-primary-foreground hover:opacity-90 animate-glow-pulse"
+              >
+                {slide.cta}
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="border-border/80 bg-secondary/40 hover:bg-secondary"
+              >
+                Lacak Pesanan
+              </Button>
+            </div>
+
+            {/* Indicators */}
+            <div className="mt-2 flex items-center gap-2">
+              {slides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setIndex(i)}
+                  aria-label={`Slide ${i + 1}`}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === index ? "w-8 bg-gradient-neon" : "w-3 bg-muted hover:bg-muted-foreground/40"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="relative h-56 md:h-auto">
+            <img
+              src={heroImg}
+              alt="Karakter gaming neon futuristik"
+              width={1920}
+              height={1024}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-card via-card/60 to-transparent md:from-card md:via-card/40" />
+          </div>
+        </div>
+
+        {/* Decorative neon corners */}
+        <div className="pointer-events-none absolute -left-20 -top-20 h-60 w-60 rounded-full bg-primary/20 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
+      </div>
+    </section>
+  );
+}
