@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react";
 import { games } from "@/lib/games";
 import { getTopUpData } from "@/lib/topup-data";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/topup/$slug")({
   head: ({ params }) => {
@@ -34,6 +35,9 @@ function TopUpDetailPage() {
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
   const [zoneId, setZoneId] = useState("");
+  const [whatsappBuyer, setWhatsappBuyer] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const selectedPrice = useMemo(() => {
     if (!selectedDenom) return 0;
@@ -43,6 +47,37 @@ function TopUpDetailPage() {
 
   const gameName = game?.name ?? topUp.name;
   const gameCover = game?.cover ?? "";
+
+  const handleCheckout = async () => {
+    if (!selectedDenom || !selectedPayment || !userId || !whatsappBuyer) return;
+    
+    setIsSubmitting(true);
+    try {
+      const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`; // e.g. INV-123456
+      
+      const { error } = await supabase.from("topup_orders").insert({
+        invoice_id: invoiceId,
+        game_name: gameName,
+        user_id_game: userId,
+        zone_id_game: zoneId,
+        nominal: selectedDenom,
+        payment_method: selectedPayment,
+        whatsapp_buyer: whatsappBuyer,
+        total_price: selectedPrice,
+      });
+
+      if (error) throw error;
+      
+      alert(`Pesanan berhasil dibuat!\nNomor Invoice Anda: ${invoiceId}\nSilakan salin nomor ini untuk melacak pesanan.`);
+      router.navigate({ to: "/lacak" });
+    } catch (err) {
+      console.error("Supabase Insert Error:", err);
+      console.log(err);
+      alert("Terjadi kesalahan saat menyimpan pesanan. Silakan periksa console untuk detailnya.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-28">
@@ -109,7 +144,7 @@ function TopUpDetailPage() {
             Masukkan User ID
           </h2>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label
                 htmlFor="input-user-id"
@@ -131,7 +166,7 @@ function TopUpDetailPage() {
                 htmlFor="input-zone-id"
                 className="mb-1.5 block text-xs font-medium text-muted-foreground"
               >
-                Zone ID
+                Zone ID (Opsional)
               </label>
               <input
                 id="input-zone-id"
@@ -139,6 +174,22 @@ function TopUpDetailPage() {
                 placeholder="Contoh: 1234"
                 value={zoneId}
                 onChange={(e) => setZoneId(e.target.value)}
+                className="w-full rounded-xl border border-border/60 bg-input/60 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label
+                htmlFor="input-whatsapp"
+                className="mb-1.5 block text-xs font-medium text-muted-foreground"
+              >
+                Nomor WhatsApp (Untuk Notifikasi)
+              </label>
+              <input
+                id="input-whatsapp"
+                type="text"
+                placeholder="Contoh: 08123456789"
+                value={whatsappBuyer}
+                onChange={(e) => setWhatsappBuyer(e.target.value)}
                 className="w-full rounded-xl border border-border/60 bg-input/60 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
             </div>
@@ -246,11 +297,18 @@ function TopUpDetailPage() {
           </div>
           <button
             type="button"
-            disabled={!selectedDenom || !selectedPayment || !userId}
+            onClick={handleCheckout}
+            disabled={!selectedDenom || !selectedPayment || !userId || !whatsappBuyer || isSubmitting}
             className="shrink-0 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:opacity-90 hover:shadow-[0_0_24px_-4px_var(--neon-purple)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
-            <CreditCard className="mr-1.5 inline-block h-4 w-4 -mt-0.5" />
-            Beli Sekarang
+            {isSubmitting ? (
+              "Memproses..."
+            ) : (
+              <>
+                <CreditCard className="mr-1.5 inline-block h-4 w-4 -mt-0.5" />
+                Beli Sekarang
+              </>
+            )}
           </button>
         </div>
       </div>

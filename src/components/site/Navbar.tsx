@@ -9,15 +9,14 @@ const navItems = [
   { label: "Beranda", href: "/" },
   { label: "Lacak Pesanan", href: "/lacak" },
   { label: "Joki", href: "/joki" },
-  { label: "Reseller", href: "/" },
 ];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/70 backdrop-blur-lg supports-[backdrop-filter]:bg-background/50">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6 lg:gap-6">
+    <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:gap-8 lg:px-8">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <span className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-neon text-primary-foreground shadow-[0_0_16px_-2px_var(--neon-purple)]">
@@ -29,35 +28,36 @@ export function Navbar() {
         </Link>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-md mx-auto">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative flex-1 max-w-md mx-auto lg:max-w-xl transition-all duration-300 focus-within:max-w-2xl">
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Cari game..."
-            className="h-10 pl-9 bg-input/60 border-border/60 focus-visible:ring-primary"
+            placeholder="Cari game favoritmu..."
+            className="h-11 rounded-full pl-11 pr-4 bg-input/40 border-border/60 text-base transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-input/80 hover:bg-input/60 shadow-sm"
           />
         </div>
 
-        {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.href}
-              className="px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Desktop nav & CTA */}
+        <div className="hidden lg:flex items-center gap-8">
+          <nav className="flex items-center gap-8">
+            {navItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.href}
+                className="text-[15px] font-semibold text-muted-foreground transition-all hover:text-foreground hover:scale-[1.02]"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
 
-        {/* CTA */}
-        <Button
-          asChild
-          className="hidden sm:inline-flex bg-gradient-neon text-primary-foreground font-semibold hover:opacity-90 transition-all hover:shadow-[0_0_20px_-2px_var(--neon-purple)]"
-        >
-          <Link to="/">Masuk / Daftar</Link>
-        </Button>
+          <Button
+            asChild
+            className="hidden sm:inline-flex bg-gradient-neon text-primary-foreground font-bold hover:opacity-90 transition-all hover:shadow-[0_0_24px_-2px_var(--neon-purple)] rounded-full px-6 h-11"
+          >
+            <Link to="/auth">Masuk / Daftar</Link>
+          </Button>
+        </div>
 
         {/* Mobile menu */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -83,7 +83,7 @@ export function Navbar() {
                 asChild
                 className="mt-4 bg-gradient-neon text-primary-foreground font-semibold"
               >
-                <Link to="/" onClick={() => setOpen(false)}>Masuk / Daftar</Link>
+                <Link to="/auth" onClick={() => setOpen(false)}>Masuk / Daftar</Link>
               </Button>
             </nav>
           </SheetContent>

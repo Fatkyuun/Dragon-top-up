@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LacakRouteImport } from './routes/lacak'
 import { Route as JokiRouteImport } from './routes/joki'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as TopupSlugRouteImport } from './routes/topup.$slug'
 
@@ -22,6 +23,11 @@ const LacakRoute = LacakRouteImport.update({
 const JokiRoute = JokiRouteImport.update({
   id: '/joki',
   path: '/joki',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,12 +43,14 @@ const TopupSlugRoute = TopupSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/joki': typeof JokiRoute
   '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/joki': typeof JokiRoute
   '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
@@ -50,20 +58,22 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/joki': typeof JokiRoute
   '/lacak': typeof LacakRoute
   '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/joki' | '/lacak' | '/topup/$slug'
+  fullPaths: '/' | '/auth' | '/joki' | '/lacak' | '/topup/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/joki' | '/lacak' | '/topup/$slug'
-  id: '__root__' | '/' | '/joki' | '/lacak' | '/topup/$slug'
+  to: '/' | '/auth' | '/joki' | '/lacak' | '/topup/$slug'
+  id: '__root__' | '/' | '/auth' | '/joki' | '/lacak' | '/topup/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   JokiRoute: typeof JokiRoute
   LacakRoute: typeof LacakRoute
   TopupSlugRoute: typeof TopupSlugRoute
@@ -85,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JokiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,6 +121,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   JokiRoute: JokiRoute,
   LacakRoute: LacakRoute,
   TopupSlugRoute: TopupSlugRoute,
