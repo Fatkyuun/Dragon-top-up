@@ -9,38 +9,65 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as JokiRouteImport } from './routes/joki'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as TopupSlugRouteImport } from './routes/topup.$slug'
 
+const JokiRoute = JokiRouteImport.update({
+  id: '/joki',
+  path: '/joki',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TopupSlugRoute = TopupSlugRouteImport.update({
+  id: '/topup/$slug',
+  path: '/topup/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/joki': typeof JokiRoute
+  '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/joki': typeof JokiRoute
+  '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/joki': typeof JokiRoute
+  '/topup/$slug': typeof TopupSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/joki' | '/topup/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/joki' | '/topup/$slug'
+  id: '__root__' | '/' | '/joki' | '/topup/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  JokiRoute: typeof JokiRoute
+  TopupSlugRoute: typeof TopupSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/joki': {
+      id: '/joki'
+      path: '/joki'
+      fullPath: '/joki'
+      preLoaderRoute: typeof JokiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,12 +75,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/topup/$slug': {
+      id: '/topup/$slug'
+      path: '/topup/$slug'
+      fullPath: '/topup/$slug'
+      preLoaderRoute: typeof TopupSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  JokiRoute: JokiRoute,
+  TopupSlugRoute: TopupSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

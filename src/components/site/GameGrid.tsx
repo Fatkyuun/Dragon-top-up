@@ -1,4 +1,5 @@
 import { Flame } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { games } from "@/lib/games";
 
 export function GameGrid() {
@@ -24,9 +25,10 @@ export function GameGrid() {
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
         {games.map((g) => (
-          <a
+          <Link
             key={g.slug}
-            href="#"
+            to="/topup/$slug"
+            params={{ slug: g.slug }}
             className="group relative block overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:border-primary/70 hover:shadow-[0_0_24px_-6px_var(--neon-purple)] hover:-translate-y-1"
           >
             <div className="aspect-[3/4] overflow-hidden">
@@ -52,7 +54,7 @@ export function GameGrid() {
               <h3 className="line-clamp-2 text-sm font-semibold text-white">{g.name}</h3>
               <p className="mt-0.5 text-[11px] text-white/70">Top Up & Joki</p>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </section>
