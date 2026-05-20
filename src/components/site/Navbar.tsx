@@ -1,6 +1,6 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Search, Menu, Gamepad2, X, User, LogOut, ChevronDown } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Search, Menu, Gamepad2, X, User, LogOut, ChevronDown, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -26,6 +26,13 @@ export function Navbar() {
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
+  // ── Live Search State ──
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -39,6 +46,53 @@ export function Navbar() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // ── Live Search Effect ──
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setIsDropdownOpen(false);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const { data } = await supabase
+          .from("master_games")
+          .select("name, slug, image_url")
+          .ilike("name", `%${searchQuery}%`)
+          .limit(5);
+
+        setSearchResults(data || []);
+        setIsDropdownOpen(true);
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
+
+  // ── Close dropdown on click outside ──
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectGame = (slug: string) => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setIsDropdownOpen(false);
+    router.navigate({ to: "/topup/$slug", params: { slug } });
+  };
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -60,13 +114,55 @@ export function Navbar() {
         </Link>
 
         {/* Search */}
-        <div className="relative flex-1 max-w-md mx-auto lg:max-w-xl transition-all duration-300 focus-within:max-w-2xl">
+        <div ref={searchRef} className="relative flex-1 max-w-md mx-auto lg:max-w-xl transition-all duration-300 focus-within:max-w-2xl">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Cari game favoritmu..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => { if (searchResults.length > 0 || searchQuery.length >= 2) setIsDropdownOpen(true); }}
             className="h-11 rounded-full pl-11 pr-4 bg-input/40 border-border/60 text-base transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:bg-input/80 hover:bg-input/60 shadow-sm"
           />
+
+          {/* ── Search Dropdown ── */}
+          {isDropdownOpen && (
+            <div className="absolute top-full left-0 right-0 mt-2 rounded-xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+              {isSearching ? (
+                <div className="flex items-center justify-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Mencari...
+                </div>
+              ) : searchResults.length === 0 ? (
+                <div className="px-4 py-6 text-center text-sm text-muted-foreground">
+                  Game tidak ditemukan
+                </div>
+              ) : (
+                <ul className="divide-y divide-border/30">
+                  {searchResults.map((g) => (
+                    <li key={g.slug}>
+                      <button
+                        type="button"
+                        onClick={() => handleSelectGame(g.slug)}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-primary/10 focus:bg-primary/10 outline-none"
+                      >
+                        {g.image_url ? (
+                          <img src={g.image_url} alt={g.name} className="h-10 w-10 rounded-lg object-cover border border-border/40 shrink-0" />
+                        ) : (
+                          <div className="h-10 w-10 rounded-lg bg-secondary/50 grid place-items-center shrink-0 border border-border/40">
+                            <Gamepad2 className="h-5 w-5 text-muted-foreground/50" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{g.name}</p>
+                          <p className="text-[11px] text-muted-foreground">Top Up & Joki</p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Desktop nav & CTA */}

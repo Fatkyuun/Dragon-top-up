@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react";
 import { games } from "@/lib/games";
 import { supabase } from "@/lib/supabase";
@@ -75,8 +75,24 @@ function TopUpDetailPage() {
   }, [selectedDenomId, packages]);
 
   const selectedPrice = selectedPackage?.price ?? 0;
-  const gameName = game?.game_name || "Memuat...";
-  const gameCover = game?.cover_url || game?.image_url || ""; // Handling possible column names
+  const gameName = game?.name || "Memuat...";
+  const gameCover = game?.image_url || "";
+
+  // ── Fallback: game not found ──
+  if (!isLoadingData && !game) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Zap className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Game Tidak Ditemukan</h1>
+          <p className="text-muted-foreground mb-6">Game yang kamu cari tidak tersedia atau link-nya salah.</p>
+          <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg hover:opacity-90 transition-all">
+            <ArrowLeft className="h-4 w-4" /> Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleCheckout = async () => {
     if (!selectedPackage || !selectedPayment || !userId || !whatsappBuyer) return;
@@ -89,7 +105,7 @@ function TopUpDetailPage() {
         invoice_id: invoiceId,
         game_name: gameName,
         user_id_game: userId,
-        zone_id_game: zoneId,
+        zone_id_game: zoneId || "-",
         nominal: selectedPackage.item_name,
         payment_method: selectedPayment,
         whatsapp_buyer: whatsappBuyer,
@@ -173,7 +189,7 @@ function TopUpDetailPage() {
             <span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-neon text-xs font-extrabold text-primary-foreground shadow">
               1
             </span>
-            Masukkan User ID
+            Masukkan Data Akun
           </h2>
 
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -182,33 +198,35 @@ function TopUpDetailPage() {
                 htmlFor="input-user-id"
                 className="mb-1.5 block text-xs font-medium text-muted-foreground"
               >
-                User ID
+                {game?.id_label || "User ID"}
               </label>
               <input
                 id="input-user-id"
                 type="text"
-                placeholder="Contoh: 123456789"
+                placeholder={`Masukkan ${game?.id_label || "User ID"}`}
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
                 className="w-full rounded-xl border border-border/60 bg-input/60 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
               />
             </div>
-            <div>
-              <label
-                htmlFor="input-zone-id"
-                className="mb-1.5 block text-xs font-medium text-muted-foreground"
-              >
-                Zone ID (Opsional)
-              </label>
-              <input
-                id="input-zone-id"
-                type="text"
-                placeholder="Contoh: 1234"
-                value={zoneId}
-                onChange={(e) => setZoneId(e.target.value)}
-                className="w-full rounded-xl border border-border/60 bg-input/60 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+            {game?.zone_label && (
+              <div>
+                <label
+                  htmlFor="input-zone-id"
+                  className="mb-1.5 block text-xs font-medium text-muted-foreground"
+                >
+                  {game.zone_label}
+                </label>
+                <input
+                  id="input-zone-id"
+                  type="text"
+                  placeholder={`Masukkan ${game.zone_label}`}
+                  value={zoneId}
+                  onChange={(e) => setZoneId(e.target.value)}
+                  className="w-full rounded-xl border border-border/60 bg-input/60 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/30"
+                />
+              </div>
+            )}
             <div className="sm:col-span-2">
               <label
                 htmlFor="input-whatsapp"

@@ -111,6 +111,22 @@ function JokiDetailPage() {
   const gameName = game?.name || "Memuat...";
   const gameCover = game?.image_url || "";
 
+  // ── Fallback: game not found ──
+  if (!isLoadingData && !game) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <Swords className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold mb-2">Game Tidak Ditemukan</h1>
+          <p className="text-muted-foreground mb-6">Game yang kamu cari tidak tersedia atau link-nya salah.</p>
+          <Link to="/" className="inline-flex items-center gap-2 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg hover:opacity-90 transition-all">
+            <ArrowLeft className="h-4 w-4" /> Kembali ke Beranda
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   const canSubmit =
     selectedPackage &&
     loginVia &&
