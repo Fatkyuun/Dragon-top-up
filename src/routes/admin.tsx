@@ -13,6 +13,9 @@ import {
   Plus,
   Trash2,
   Package,
+  Edit,
+  X,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -35,21 +38,23 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState("dashboard");
 
-  // State for new banner form
+  // Add state
   const [isAddingBanner, setIsAddingBanner] = useState(false);
-  const [newBanner, setNewBanner] = useState({
-    title: "",
-    subtitle: "",
-    tag_text: "",
-    button_text: "",
-    button_link: "",
-  });
-
-  // State for catalog (games & packages)
+  const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
   const [isAddingGame, setIsAddingGame] = useState(false);
   const [isAddingPackage, setIsAddingPackage] = useState(false);
   const [newGame, setNewGame] = useState({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "" });
   const [newPackage, setNewPackage] = useState({ game_slug: "", category: "topup", item_name: "", price: "" });
+
+  // Edit states
+  const [editingBanner, setEditingBanner] = useState<any>(null);
+  const [editingGame, setEditingGame] = useState<any>(null);
+  const [editingPackage, setEditingPackage] = useState<any>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Search states
+  const [searchGameQuery, setSearchGameQuery] = useState("");
+  const [searchPackageQuery, setSearchPackageQuery] = useState("");
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isAdminLoggedIn");
@@ -88,6 +93,7 @@ function AdminDashboard() {
     router.navigate({ to: "/admin-login" });
   };
 
+  /* ── Order Status ── */
   const handleTopupStatusChange = async (invoiceId: string, newStatus: string) => {
     try {
       setOrders((prev) => prev.map((o) => (o.invoice_id === invoiceId ? { ...o, status: newStatus } : o)));
@@ -109,6 +115,43 @@ function AdminDashboard() {
     } catch {
       toast.error("Gagal memperbarui status");
       fetchOrders();
+    }
+  };
+
+  /* ── Banners ── */
+  const handleAddBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from("master_banners").insert([{ ...newBanner, is_active: true }]);
+      if (error) throw error;
+      toast.success("Promo berhasil ditambahkan");
+      setIsAddingBanner(false);
+      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menambah promo", { description: err.message });
+    }
+  };
+
+  const handleUpdateBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase.from("master_banners").update({
+        title: editingBanner.title,
+        subtitle: editingBanner.subtitle,
+        tag_text: editingBanner.tag_text,
+        button_text: editingBanner.button_text,
+        button_link: editingBanner.button_link,
+      }).eq("id", editingBanner.id);
+      if (error) throw error;
+      toast.success("Data berhasil diperbarui!");
+      setEditingBanner(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal memperbarui promo", { description: err.message });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -137,25 +180,6 @@ function AdminDashboard() {
     }
   };
 
-  const handleAddBanner = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const { error } = await supabase.from("master_banners").insert([
-        {
-          ...newBanner,
-          is_active: true,
-        },
-      ]);
-      if (error) throw error;
-      toast.success("Promo berhasil ditambahkan");
-      setIsAddingBanner(false);
-      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
-      fetchOrders();
-    } catch (err: any) {
-      toast.error("Gagal menambah promo", { description: err.message });
-    }
-  };
-
   /* ── Catalog Handlers ── */
   const handleAddGame = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,6 +192,28 @@ function AdminDashboard() {
       fetchOrders();
     } catch (err: any) {
       toast.error("Gagal menambah game", { description: err.message });
+    }
+  };
+
+  const handleUpdateGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase.from("master_games").update({
+        name: editingGame.name,
+        slug: editingGame.slug,
+        image_url: editingGame.image_url,
+        id_label: editingGame.id_label,
+        zone_label: editingGame.zone_label,
+      }).eq("id", editingGame.id);
+      if (error) throw error;
+      toast.success("Data berhasil diperbarui!");
+      setEditingGame(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal memperbarui game", { description: err.message });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -200,6 +246,27 @@ function AdminDashboard() {
     }
   };
 
+  const handleUpdatePackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase.from("master_packages").update({
+        game_slug: editingPackage.game_slug,
+        category: editingPackage.category,
+        item_name: editingPackage.item_name,
+        price: Number(editingPackage.price),
+      }).eq("id", editingPackage.id);
+      if (error) throw error;
+      toast.success("Data berhasil diperbarui!");
+      setEditingPackage(null);
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal memperbarui produk", { description: err.message });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDeletePackage = async (id: string) => {
     if (!confirm("Hapus produk ini?")) return;
     try {
@@ -229,7 +296,16 @@ function AdminDashboard() {
   const menungguProses = allOrders.filter((o) => o.status?.toLowerCase() !== "selesai").length;
   const recentOrders = allOrders.slice(0, 5);
 
-  /* ── Status dropdown helper ── */
+  /* ── Filtered Catalog ── */
+  const filteredGames = games.filter(game => game.name.toLowerCase().includes(searchGameQuery.toLowerCase()));
+  
+  const filteredPackages = packages.filter(p => {
+    const gameObj = games.find(g => g.slug === p.game_slug);
+    const gameName = gameObj?.name || p.game_slug;
+    const search = searchPackageQuery.toLowerCase();
+    return p.item_name.toLowerCase().includes(search) || gameName.toLowerCase().includes(search);
+  });
+
   const StatusDropdown = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <div className="relative inline-block w-40">
       <select
@@ -496,7 +572,10 @@ function AdminDashboard() {
                               <span aria-hidden="true" className={`pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${b.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
                             </button>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                            <button onClick={() => setEditingBanner(b)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+                              <Edit className="h-4 w-4" />
+                            </button>
                             <button onClick={() => handleBannerDelete(b.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -513,17 +592,28 @@ function AdminDashboard() {
           {/* ═══ CATALOG (GAMES & PACKAGES) ═══ */}
           {activeMenu === "catalog" && (
             <div className="space-y-10 animate-in fade-in duration-300">
-              
-              {/* BAGIAN A: KELOLA GAME */}
+              {/* KELOLA GAME */}
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-2xl font-bold">Kelola Game</h2>
                     <p className="text-muted-foreground mt-1">Tambah atau hapus game dari website.</p>
                   </div>
-                  <Button onClick={() => setIsAddingGame(!isAddingGame)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
-                    {isAddingGame ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Game</>}
-                  </Button>
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Cari nama game..."
+                        value={searchGameQuery}
+                        onChange={(e) => setSearchGameQuery(e.target.value)}
+                        className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
+                      />
+                    </div>
+                    <Button onClick={() => setIsAddingGame(!isAddingGame)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2 whitespace-nowrap">
+                      {isAddingGame ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Game</>}
+                    </Button>
+                  </div>
                 </div>
 
                 {isAddingGame && (
@@ -572,9 +662,9 @@ function AdminDashboard() {
                       <tbody className="divide-y divide-border/30">
                         {loading ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                        ) : games.length === 0 ? (
-                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada game.</td></tr>
-                        ) : games.map((g) => (
+                        ) : filteredGames.length === 0 ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Tidak ada data yang cocok dengan pencarian Anda.</td></tr>
+                        ) : filteredGames.map((g) => (
                           <tr key={g.id} className="hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4">
                               <img src={g.image_url} alt={g.name} className="h-10 w-10 rounded object-cover bg-secondary/50" />
@@ -585,7 +675,10 @@ function AdminDashboard() {
                               <span className="block">{g.id_label}</span>
                               {g.zone_label && <span className="block text-muted-foreground">+ {g.zone_label}</span>}
                             </td>
-                            <td className="px-6 py-4 text-right">
+                            <td className="px-6 py-4 text-right flex items-center justify-end gap-1 h-full pt-6">
+                              <button onClick={() => setEditingGame(g)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                <Edit className="h-4 w-4" />
+                              </button>
                               <button onClick={() => handleDeleteGame(g.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -598,16 +691,28 @@ function AdminDashboard() {
                 </div>
               </div>
 
-              {/* BAGIAN B: KELOLA PRODUK */}
+              {/* KELOLA PRODUK */}
               <div className="space-y-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-2xl font-bold">Kelola Produk & Paket Joki</h2>
                     <p className="text-muted-foreground mt-1">Atur harga dan layanan untuk setiap game.</p>
                   </div>
-                  <Button onClick={() => setIsAddingPackage(!isAddingPackage)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
-                    {isAddingPackage ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Produk</>}
-                  </Button>
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="Cari nama produk / game..."
+                        value={searchPackageQuery}
+                        onChange={(e) => setSearchPackageQuery(e.target.value)}
+                        className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
+                      />
+                    </div>
+                    <Button onClick={() => setIsAddingPackage(!isAddingPackage)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2 whitespace-nowrap">
+                      {isAddingPackage ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Produk</>}
+                    </Button>
+                  </div>
                 </div>
 
                 {isAddingPackage && (
@@ -654,9 +759,9 @@ function AdminDashboard() {
                       <tbody className="divide-y divide-border/30">
                         {loading ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                        ) : packages.length === 0 ? (
-                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada produk.</td></tr>
-                        ) : packages.map((p) => {
+                        ) : filteredPackages.length === 0 ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Tidak ada data yang cocok dengan pencarian Anda.</td></tr>
+                        ) : filteredPackages.map((p) => {
                           const gameObj = games.find(g => g.slug === p.game_slug);
                           return (
                             <tr key={p.id} className="hover:bg-white/5 transition-colors">
@@ -671,7 +776,10 @@ function AdminDashboard() {
                               </td>
                               <td className="px-6 py-4 font-semibold text-primary">{p.item_name}</td>
                               <td className="px-6 py-4 text-green-500 font-bold">{formatRupiah(p.price)}</td>
-                              <td className="px-6 py-4 text-right">
+                              <td className="px-6 py-4 text-right flex items-center justify-end gap-1">
+                                <button onClick={() => setEditingPackage(p)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+                                  <Edit className="h-4 w-4" />
+                                </button>
                                 <button onClick={() => handleDeletePackage(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                                   <Trash2 className="h-4 w-4" />
                                 </button>
@@ -690,6 +798,139 @@ function AdminDashboard() {
 
         </div>
       </main>
+
+      {/* ═══ MODALS EDIT ═══ */}
+      {/* Banner Edit Modal */}
+      {editingBanner && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-[20px] border border-border/50 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Edit Promo</h3>
+              <button onClick={() => setEditingBanner(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5"/></button>
+            </div>
+            <form onSubmit={handleUpdateBanner} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Judul (Title)</label>
+                  <input required type="text" value={editingBanner.title} onChange={e => setEditingBanner({...editingBanner, title: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Teks Tag (Opsional)</label>
+                  <input type="text" value={editingBanner.tag_text || ""} onChange={e => setEditingBanner({...editingBanner, tag_text: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Deskripsi (Subtitle)</label>
+                  <input required type="text" value={editingBanner.subtitle} onChange={e => setEditingBanner({...editingBanner, subtitle: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Teks Tombol</label>
+                  <input required type="text" value={editingBanner.button_text} onChange={e => setEditingBanner({...editingBanner, button_text: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Link Tombol</label>
+                  <input required type="text" value={editingBanner.button_link} onChange={e => setEditingBanner({...editingBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end pt-4 gap-2">
+                <Button type="button" variant="ghost" onClick={() => setEditingBanner(null)}>Batal</Button>
+                <Button type="submit" disabled={isUpdating} className="bg-primary text-primary-foreground min-w-[120px]">
+                  {isUpdating ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Game Edit Modal */}
+      {editingGame && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-[20px] border border-border/50 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Edit Game</h3>
+              <button onClick={() => setEditingGame(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5"/></button>
+            </div>
+            <form onSubmit={handleUpdateGame} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nama Game</label>
+                  <input required type="text" value={editingGame.name} onChange={e => {
+                      const name = e.target.value;
+                      const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                      setEditingGame({...editingGame, name, slug});
+                    }} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Slug (Otomatis)</label>
+                  <input required type="text" value={editingGame.slug} onChange={e => setEditingGame({...editingGame, slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (Cover)</label>
+                  <input required type="text" value={editingGame.image_url} onChange={e => setEditingGame({...editingGame, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Label ID Utama</label>
+                  <input required type="text" value={editingGame.id_label} onChange={e => setEditingGame({...editingGame, id_label: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Label Zone ID (Opsional)</label>
+                  <input type="text" value={editingGame.zone_label || ""} onChange={e => setEditingGame({...editingGame, zone_label: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end pt-4 gap-2">
+                <Button type="button" variant="ghost" onClick={() => setEditingGame(null)}>Batal</Button>
+                <Button type="submit" disabled={isUpdating} className="bg-primary text-primary-foreground min-w-[120px]">
+                  {isUpdating ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Package Edit Modal */}
+      {editingPackage && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg rounded-[20px] border border-border/50 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Edit Produk / Paket</h3>
+              <button onClick={() => setEditingPackage(null)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5"/></button>
+            </div>
+            <form onSubmit={handleUpdatePackage} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game</label>
+                  <select required value={editingPackage.game_slug} onChange={e => setEditingPackage({...editingPackage, game_slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none">
+                    {games.map(g => <option key={g.slug} value={g.slug}>{g.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Kategori</label>
+                  <select required value={editingPackage.category} onChange={e => setEditingPackage({...editingPackage, category: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none">
+                    <option value="topup">Top Up</option>
+                    <option value="joki">Joki</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nama Produk / Layanan</label>
+                  <input required type="text" value={editingPackage.item_name} onChange={e => setEditingPackage({...editingPackage, item_name: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Harga (Rp)</label>
+                  <input required type="number" min="0" value={editingPackage.price} onChange={e => setEditingPackage({...editingPackage, price: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+              </div>
+              <div className="flex justify-end pt-4 gap-2">
+                <Button type="button" variant="ghost" onClick={() => setEditingPackage(null)}>Batal</Button>
+                <Button type="submit" disabled={isUpdating} className="bg-primary text-primary-foreground min-w-[120px]">
+                  {isUpdating ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
