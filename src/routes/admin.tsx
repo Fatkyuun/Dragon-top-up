@@ -9,8 +9,13 @@ import {
   RefreshCcw,
   Wallet,
   Clock,
+  Image as ImageIcon,
+  Plus,
+  Trash2,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -23,8 +28,28 @@ function AdminDashboard() {
   const router = useRouter();
   const [orders, setOrders] = useState<any[]>([]);
   const [jokiOrders, setJokiOrders] = useState<any[]>([]);
+  const [banners, setBanners] = useState<any[]>([]);
+  const [games, setGames] = useState<any[]>([]);
+  const [packages, setPackages] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState("dashboard");
+
+  // State for new banner form
+  const [isAddingBanner, setIsAddingBanner] = useState(false);
+  const [newBanner, setNewBanner] = useState({
+    title: "",
+    subtitle: "",
+    tag_text: "",
+    button_text: "",
+    button_link: "",
+  });
+
+  // State for catalog (games & packages)
+  const [isAddingGame, setIsAddingGame] = useState(false);
+  const [isAddingPackage, setIsAddingPackage] = useState(false);
+  const [newGame, setNewGame] = useState({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "" });
+  const [newPackage, setNewPackage] = useState({ game_slug: "", category: "topup", item_name: "", price: "" });
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isAdminLoggedIn");
@@ -38,12 +63,18 @@ function AdminDashboard() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const [topupRes, jokiRes] = await Promise.all([
+      const [topupRes, jokiRes, bannersRes, gamesRes, packRes] = await Promise.all([
         supabase.from("topup_orders").select("*").order("created_at", { ascending: false }),
         supabase.from("joki_orders").select("*").order("created_at", { ascending: false }),
+        supabase.from("master_banners").select("*").order("created_at", { ascending: false }),
+        supabase.from("master_games").select("*").order("name", { ascending: true }),
+        supabase.from("master_packages").select("*").order("game_slug", { ascending: true }),
       ]);
       if (topupRes.data) setOrders(topupRes.data);
       if (jokiRes.data) setJokiOrders(jokiRes.data);
+      if (bannersRes.data) setBanners(bannersRes.data);
+      if (gamesRes.data) setGames(gamesRes.data);
+      if (packRes.data) setPackages(packRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -78,6 +109,106 @@ function AdminDashboard() {
     } catch {
       toast.error("Gagal memperbarui status");
       fetchOrders();
+    }
+  };
+
+  const handleBannerToggleActive = async (id: number, currentStatus: boolean) => {
+    try {
+      setBanners((prev) => prev.map((b) => (b.id === id ? { ...b, is_active: !currentStatus } : b)));
+      const { error } = await supabase.from("master_banners").update({ is_active: !currentStatus }).eq("id", id);
+      if (error) throw error;
+      toast.success("Status promo diperbarui");
+    } catch {
+      toast.error("Gagal memperbarui promo");
+      fetchOrders();
+    }
+  };
+
+  const handleBannerDelete = async (id: number) => {
+    if (!confirm("Apakah Anda yakin ingin menghapus promo ini?")) return;
+    try {
+      setBanners((prev) => prev.filter((b) => b.id !== id));
+      const { error } = await supabase.from("master_banners").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Promo berhasil dihapus");
+    } catch {
+      toast.error("Gagal menghapus promo");
+      fetchOrders();
+    }
+  };
+
+  const handleAddBanner = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from("master_banners").insert([
+        {
+          ...newBanner,
+          is_active: true,
+        },
+      ]);
+      if (error) throw error;
+      toast.success("Promo berhasil ditambahkan");
+      setIsAddingBanner(false);
+      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menambah promo", { description: err.message });
+    }
+  };
+
+  /* ── Catalog Handlers ── */
+  const handleAddGame = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from("master_games").insert([newGame]);
+      if (error) throw error;
+      toast.success("Game berhasil ditambahkan!");
+      setIsAddingGame(false);
+      setNewGame({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "" });
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menambah game", { description: err.message });
+    }
+  };
+
+  const handleDeleteGame = async (id: number) => {
+    if (!confirm("Hapus game ini?")) return;
+    try {
+      const { error } = await supabase.from("master_games").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Game berhasil dihapus!");
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menghapus game", { description: err.message });
+    }
+  };
+
+  const handleAddPackage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { error } = await supabase.from("master_packages").insert([{
+        ...newPackage,
+        price: Number(newPackage.price)
+      }]);
+      if (error) throw error;
+      toast.success("Produk berhasil disimpan!");
+      setIsAddingPackage(false);
+      setNewPackage({ game_slug: "", category: "topup", item_name: "", price: "" });
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menyimpan produk", { description: err.message });
+    }
+  };
+
+  const handleDeletePackage = async (id: string) => {
+    if (!confirm("Hapus produk ini?")) return;
+    try {
+      const { error } = await supabase.from("master_packages").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Produk berhasil dihapus!");
+      fetchOrders();
+    } catch (err: any) {
+      toast.error("Gagal menghapus produk", { description: err.message });
     }
   };
 
@@ -118,7 +249,12 @@ function AdminDashboard() {
     </div>
   );
 
-  const pageTitle = activeMenu === "topup" ? "Manajemen Pesanan Top Up" : activeMenu === "joki" ? "Manajemen Pesanan Joki" : "Admin Dashboard";
+  const pageTitle =
+    activeMenu === "topup" ? "Manajemen Pesanan Top Up"
+    : activeMenu === "joki" ? "Manajemen Pesanan Joki"
+    : activeMenu === "banners" ? "Manajemen Promo"
+    : activeMenu === "catalog" ? "Kelola Katalog"
+    : "Admin Dashboard";
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
@@ -130,8 +266,14 @@ function AdminDashboard() {
             <span className="font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">NeonAdmin</span>
           </Link>
         </div>
-        <nav className="flex-1 p-4 flex flex-col gap-1.5">
-          {([["dashboard", "Dashboard", LayoutDashboard], ["topup", "Pesanan Top Up", Gamepad2], ["joki", "Pesanan Joki", Swords]] as const).map(([key, label, Icon]) => (
+        <nav className="flex-1 p-4 flex flex-col gap-1.5 overflow-y-auto">
+          {([
+            ["dashboard", "Dashboard", LayoutDashboard],
+            ["topup", "Pesanan Top Up", Gamepad2],
+            ["joki", "Pesanan Joki", Swords],
+            ["banners", "Promo & Banner", ImageIcon],
+            ["catalog", "Kelola Katalog", Package]
+          ] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setActiveMenu(key)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeMenu === key ? "bg-red-500/10 text-red-500" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
               <Icon className="h-4 w-4" />{label}
@@ -278,6 +420,274 @@ function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* ═══ BANNERS (PROMO) ═══ */}
+          {activeMenu === "banners" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Manajemen Promo (Banner)</h2>
+                  <p className="text-muted-foreground mt-1">Atur promo yang tampil di halaman beranda.</p>
+                </div>
+                <Button onClick={() => setIsAddingBanner(!isAddingBanner)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
+                  {isAddingBanner ? <><X className="h-4 w-4"/> Batal</> : <><Plus className="h-4 w-4"/> Tambah Promo</>}
+                </Button>
+              </div>
+
+              {isAddingBanner && (
+                <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md p-6 shadow-xl animate-in slide-in-from-top-4 duration-300">
+                  <h3 className="font-bold text-lg mb-4">Tambah Promo Baru</h3>
+                  <form onSubmit={handleAddBanner} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Judul (Title)</label>
+                        <input required type="text" value={newBanner.title} onChange={e => setNewBanner({...newBanner, title: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Promo Lebaran" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Teks Tag (Opsional)</label>
+                        <input type="text" value={newBanner.tag_text} onChange={e => setNewBanner({...newBanner, tag_text: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Diskon 50%" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Deskripsi (Subtitle)</label>
+                        <input required type="text" value={newBanner.subtitle} onChange={e => setNewBanner({...newBanner, subtitle: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Top up sekarang dan dapatkan bonus menarik." />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Teks Tombol</label>
+                        <input required type="text" value={newBanner.button_text} onChange={e => setNewBanner({...newBanner, button_text: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Beli Sekarang" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Link Tombol</label>
+                        <input required type="text" value={newBanner.button_link} onChange={e => setNewBanner({...newBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="/topup/mobile-legends" />
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <Button type="submit" className="bg-primary text-primary-foreground">Simpan Promo</Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                      <tr><th className="px-6 py-4">Info Promo</th><th className="px-6 py-4">Teks Tombol</th><th className="px-6 py-4">Link Tombol</th><th className="px-6 py-4 text-center">Status</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {loading ? (
+                        <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                      ) : banners.length === 0 ? (
+                        <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada promo banner.</td></tr>
+                      ) : banners.map((b) => (
+                        <tr key={b.id} className={`hover:bg-white/5 transition-colors ${!b.is_active ? "opacity-60" : ""}`}>
+                          <td className="px-6 py-4">
+                            {b.tag_text && <span className="inline-block mb-1 text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded font-bold uppercase">{b.tag_text}</span>}
+                            <p className="font-bold text-base text-foreground">{b.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">{b.subtitle}</p>
+                          </td>
+                          <td className="px-6 py-4 font-semibold">{b.button_text}</td>
+                          <td className="px-6 py-4 text-muted-foreground text-xs">{b.button_link}</td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => handleBannerToggleActive(b.id, b.is_active)}
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background transition-colors ${b.is_active ? 'bg-green-500' : 'bg-muted'}`}
+                            >
+                              <span className="sr-only">Toggle active</span>
+                              <span aria-hidden="true" className={`pointer-events-none absolute left-0 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${b.is_active ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <button onClick={() => handleBannerDelete(b.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ═══ CATALOG (GAMES & PACKAGES) ═══ */}
+          {activeMenu === "catalog" && (
+            <div className="space-y-10 animate-in fade-in duration-300">
+              
+              {/* BAGIAN A: KELOLA GAME */}
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold">Kelola Game</h2>
+                    <p className="text-muted-foreground mt-1">Tambah atau hapus game dari website.</p>
+                  </div>
+                  <Button onClick={() => setIsAddingGame(!isAddingGame)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
+                    {isAddingGame ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Game</>}
+                  </Button>
+                </div>
+
+                {isAddingGame && (
+                  <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md p-6 shadow-xl animate-in slide-in-from-top-4 duration-300">
+                    <h3 className="font-bold text-lg mb-4">Tambah Game Baru</h3>
+                    <form onSubmit={handleAddGame} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nama Game</label>
+                          <input required type="text" value={newGame.name} onChange={e => {
+                              const name = e.target.value;
+                              const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                              setNewGame({...newGame, name, slug});
+                            }} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Mobile Legends" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Slug (Otomatis)</label>
+                          <input required type="text" value={newGame.slug} onChange={e => setNewGame({...newGame, slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="mobile-legends" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (Cover)</label>
+                          <input required type="text" value={newGame.image_url} onChange={e => setNewGame({...newGame, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="https://example.com/image.jpg" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Label ID Utama</label>
+                          <input required type="text" value={newGame.id_label} onChange={e => setNewGame({...newGame, id_label: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="User ID" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Label Zone ID (Opsional)</label>
+                          <input type="text" value={newGame.zone_label} onChange={e => setNewGame({...newGame, zone_label: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Zone ID" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <Button type="submit" className="bg-primary text-primary-foreground">Simpan Game</Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                        <tr><th className="px-6 py-4">Cover</th><th className="px-6 py-4">Nama Game</th><th className="px-6 py-4">Slug</th><th className="px-6 py-4">Label Form</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/30">
+                        {loading ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                        ) : games.length === 0 ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada game.</td></tr>
+                        ) : games.map((g) => (
+                          <tr key={g.id} className="hover:bg-white/5 transition-colors">
+                            <td className="px-6 py-4">
+                              <img src={g.image_url} alt={g.name} className="h-10 w-10 rounded object-cover bg-secondary/50" />
+                            </td>
+                            <td className="px-6 py-4 font-bold text-foreground">{g.name}</td>
+                            <td className="px-6 py-4 text-muted-foreground text-xs">{g.slug}</td>
+                            <td className="px-6 py-4 text-xs">
+                              <span className="block">{g.id_label}</span>
+                              {g.zone_label && <span className="block text-muted-foreground">+ {g.zone_label}</span>}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button onClick={() => handleDeleteGame(g.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              {/* BAGIAN B: KELOLA PRODUK */}
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold">Kelola Produk & Paket Joki</h2>
+                    <p className="text-muted-foreground mt-1">Atur harga dan layanan untuk setiap game.</p>
+                  </div>
+                  <Button onClick={() => setIsAddingPackage(!isAddingPackage)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
+                    {isAddingPackage ? "Batal" : <><Plus className="h-4 w-4"/> Tambah Produk</>}
+                  </Button>
+                </div>
+
+                {isAddingPackage && (
+                  <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md p-6 shadow-xl animate-in slide-in-from-top-4 duration-300">
+                    <h3 className="font-bold text-lg mb-4">Tambah Produk Baru</h3>
+                    <form onSubmit={handleAddPackage} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game</label>
+                          <select required value={newPackage.game_slug} onChange={e => setNewPackage({...newPackage, game_slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none">
+                            <option value="">-- Pilih Game --</option>
+                            {games.map(g => <option key={g.slug} value={g.slug}>{g.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Kategori</label>
+                          <select required value={newPackage.category} onChange={e => setNewPackage({...newPackage, category: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none">
+                            <option value="topup">Top Up</option>
+                            <option value="joki">Joki</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nama Produk / Layanan</label>
+                          <input required type="text" value={newPackage.item_name} onChange={e => setNewPackage({...newPackage, item_name: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="Contoh: 140 Diamonds" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Harga (Rp)</label>
+                          <input required type="number" min="0" value={newPackage.price} onChange={e => setNewPackage({...newPackage, price: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="50000" />
+                        </div>
+                      </div>
+                      <div className="flex justify-end pt-2">
+                        <Button type="submit" className="bg-primary text-primary-foreground">Tambah Produk</Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+
+                <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                        <tr><th className="px-6 py-4">Game</th><th className="px-6 py-4">Kategori</th><th className="px-6 py-4">Nama Produk</th><th className="px-6 py-4">Harga</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/30">
+                        {loading ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                        ) : packages.length === 0 ? (
+                          <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada produk.</td></tr>
+                        ) : packages.map((p) => {
+                          const gameObj = games.find(g => g.slug === p.game_slug);
+                          return (
+                            <tr key={p.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-4 font-bold text-foreground flex items-center gap-2">
+                                {gameObj?.image_url ? <img src={gameObj.image_url} alt="game" className="h-6 w-6 rounded object-cover" /> : <div className="h-6 w-6 rounded bg-secondary" />}
+                                {gameObj?.name || p.game_slug}
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${p.category === 'topup' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                                  {p.category}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-semibold text-primary">{p.item_name}</td>
+                              <td className="px-6 py-4 text-green-500 font-bold">{formatRupiah(p.price)}</td>
+                              <td className="px-6 py-4 text-right">
+                                <button onClick={() => handleDeletePackage(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          )}
+
         </div>
       </main>
     </div>
