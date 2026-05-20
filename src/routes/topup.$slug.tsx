@@ -2,7 +2,6 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react";
 import { games } from "@/lib/games";
-import { getTopUpData } from "@/lib/topup-data";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -27,12 +26,22 @@ function formatRupiah(n: number): string {
   return "Rp " + n.toLocaleString("id-ID");
 }
 
+const defaultPaymentMethods = [
+  { id: "qris", name: "QRIS", icon: "📱" },
+  { id: "gopay", name: "GoPay", icon: "💚" },
+  { id: "dana", name: "DANA", icon: "💙" },
+  { id: "bank", name: "Transfer Bank", icon: "🏦" },
+];
+
 function TopUpDetailPage() {
   const { slug } = Route.useParams();
-  const game = games.find((g) => g.slug === slug);
-  const topUp = getTopUpData(slug);
+  
+  // Data State
+  const [game, setGame] = useState<any>(null);
+  const [packages, setPackages] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
-  const [selectedDenom, setSelectedDenom] = useState<string | null>(null);
+  const [selectedDenomId, setSelectedDenomId] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
   const [userId, setUserId] = useState("");
   const [zoneId, setZoneId] = useState("");
@@ -40,28 +49,48 @@ function TopUpDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
-  const selectedPrice = useMemo(() => {
-    if (!selectedDenom) return 0;
-    const d = topUp.denominations.find((d) => d.id === selectedDenom);
-    return d?.price ?? 0;
-  }, [selectedDenom, topUp.denominations]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoadingData(true);
+      try {
+        const [gameRes, packRes] = await Promise.all([
+          supabase.from("master_games").select("*").eq("slug", slug).single(),
+          supabase.from("master_packages").select("*").eq("game_slug", slug).eq("category", "topup").order("price", { ascending: true })
+        ]);
 
-  const gameName = game?.name ?? topUp.name;
-  const gameCover = game?.cover ?? "";
+        if (gameRes.data) setGame(gameRes.data);
+        if (packRes.data) setPackages(packRes.data);
+      } catch (err) {
+        console.error("Error fetching detail:", err);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+    fetchData();
+  }, [slug]);
+
+  const selectedPackage = useMemo(() => {
+    if (!selectedDenomId) return null;
+    return packages.find((p) => p.id === selectedDenomId);
+  }, [selectedDenomId, packages]);
+
+  const selectedPrice = selectedPackage?.price ?? 0;
+  const gameName = game?.game_name || "Memuat...";
+  const gameCover = game?.cover_url || game?.image_url || ""; // Handling possible column names
 
   const handleCheckout = async () => {
-    if (!selectedDenom || !selectedPayment || !userId || !whatsappBuyer) return;
+    if (!selectedPackage || !selectedPayment || !userId || !whatsappBuyer) return;
     
     setIsSubmitting(true);
     try {
-      const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`; // e.g. INV-123456
+      const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`; 
       
       const { error } = await supabase.from("topup_orders").insert({
         invoice_id: invoiceId,
         game_name: gameName,
         user_id_game: userId,
         zone_id_game: zoneId,
-        nominal: selectedDenom,
+        nominal: selectedPackage.item_name,
         payment_method: selectedPayment,
         whatsapp_buyer: whatsappBuyer,
         total_price: selectedPrice,
@@ -121,11 +150,11 @@ function TopUpDetailPage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl font-bold tracking-tight truncate">
-              {gameName}
+              {isLoadingData ? <span className="animate-pulse">Memuat Data Game...</span> : gameName}
             </h1>
             <p className="mt-1 flex items-center gap-1.5 text-sm text-accent">
               <Zap className="h-3.5 w-3.5" />
-              {topUp.subtitle}
+              Proses Cepat & Otomatis
             </p>
           </div>
         </div>
@@ -212,35 +241,46 @@ function TopUpDetailPage() {
           </h2>
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
-            {topUp.denominations.map((d) => {
-              const active = selectedDenom === d.id;
-              return (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => setSelectedDenom(d.id)}
-                  className={`
-                    relative flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-4 text-center transition-all duration-200
-                    ${
-                      active
-                        ? "border-primary bg-primary/10 shadow-[0_0_16px_-4px_var(--neon-purple)]"
-                        : "border-border/50 bg-secondary/40 hover:border-border hover:bg-secondary/70"
-                    }
-                  `}
-                >
-                  {active && (
-                    <CheckCircle2 className="absolute right-1.5 top-1.5 h-4 w-4 text-primary" />
-                  )}
-                  <Diamond className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
-                  <span className={`text-sm font-semibold leading-tight ${active ? "text-foreground" : "text-foreground/90"}`}>
-                    {d.label}
-                  </span>
-                  <span className={`text-xs font-medium ${active ? "text-accent" : "text-muted-foreground"}`}>
-                    {formatRupiah(d.price)}
-                  </span>
-                </button>
-              );
-            })}
+            {isLoadingData ? (
+              <div className="col-span-full py-12 text-center text-muted-foreground flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-3"></div>
+                Memuat daftar harga...
+              </div>
+            ) : packages.length === 0 ? (
+              <div className="col-span-full py-12 text-center text-muted-foreground">
+                Belum ada nominal tersedia untuk game ini.
+              </div>
+            ) : (
+              packages.map((d) => {
+                const active = selectedDenomId === d.id;
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setSelectedDenomId(d.id)}
+                    className={`
+                      relative flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 px-3 py-4 text-center transition-all duration-200
+                      ${
+                        active
+                          ? "border-primary bg-primary/10 shadow-[0_0_16px_-4px_var(--neon-purple)]"
+                          : "border-border/50 bg-secondary/40 hover:border-border hover:bg-secondary/70"
+                      }
+                    `}
+                  >
+                    {active && (
+                      <CheckCircle2 className="absolute right-1.5 top-1.5 h-4 w-4 text-primary" />
+                    )}
+                    <Diamond className={`h-4 w-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`text-sm font-semibold leading-tight ${active ? "text-foreground" : "text-foreground/90"}`}>
+                      {d.item_name}
+                    </span>
+                    <span className={`text-xs font-medium ${active ? "text-accent" : "text-muted-foreground"}`}>
+                      {formatRupiah(d.price)}
+                    </span>
+                  </button>
+                );
+              })
+            )}
           </div>
         </section>
 
@@ -257,7 +297,7 @@ function TopUpDetailPage() {
           </h2>
 
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            {topUp.paymentMethods.map((pm) => {
+            {defaultPaymentMethods.map((pm) => {
               const active = selectedPayment === pm.id;
               return (
                 <button
@@ -301,7 +341,7 @@ function TopUpDetailPage() {
           <button
             type="button"
             onClick={handleCheckout}
-            disabled={!selectedDenom || !selectedPayment || !userId || !whatsappBuyer || isSubmitting}
+            disabled={!selectedPackage || !selectedPayment || !userId || !whatsappBuyer || isSubmitting}
             className="shrink-0 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:opacity-90 hover:shadow-[0_0_24px_-4px_var(--neon-purple)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {isSubmitting ? (

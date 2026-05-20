@@ -44,7 +44,7 @@ function AuthPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -90,16 +90,16 @@ function AuthPage() {
       const { error: profileError } = await supabase.from('profiles').insert([
         { id: data.user.id, full_name: fullName, whatsapp: whatsapp }
       ]);
-      
+
       if (profileError) {
-         toast.error("Gagal menyimpan profil: " + profileError.message);
+        toast.error("Gagal menyimpan profil: " + profileError.message);
       } else {
-         toast.success("Pendaftaran Berhasil! Silakan cek email untuk verifikasi (jika diaktifkan) atau langsung masuk.");
-         setActiveTab("login");
-         setPassword("");
+        toast.success("Pendaftaran Berhasil! Silakan cek email untuk verifikasi (jika diaktifkan) atau langsung masuk.");
+        setActiveTab("login");
+        setPassword("");
       }
     }
-    
+
     setIsLoading(false);
   };
 
@@ -145,21 +145,19 @@ function AuthPage() {
             />
             <button
               onClick={() => setActiveTab("login")}
-              className={`relative flex-1 py-3 text-sm font-bold transition-colors z-10 rounded-xl ${
-                activeTab === "login"
+              className={`relative flex-1 py-3 text-sm font-bold transition-colors z-10 rounded-xl ${activeTab === "login"
                   ? "text-white"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Masuk
             </button>
             <button
               onClick={() => setActiveTab("register")}
-              className={`relative flex-1 py-3 text-sm font-bold transition-colors z-10 rounded-xl ${
-                activeTab === "register"
+              className={`relative flex-1 py-3 text-sm font-bold transition-colors z-10 rounded-xl ${activeTab === "register"
                   ? "text-white"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
             >
               Daftar
             </button>

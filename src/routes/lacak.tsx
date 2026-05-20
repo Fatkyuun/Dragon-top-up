@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   FileSearch,
@@ -9,6 +9,7 @@ import {
   Clock,
   Loader2,
   Search,
+  Swords,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -22,6 +23,9 @@ export const Route = createFileRoute("/lacak")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    invoice: (search.invoice as string) || "",
+  }),
   component: LacakPage,
 });
 
@@ -30,37 +34,70 @@ function formatRupiah(n: number): string {
 }
 
 function LacakPage() {
-  const [invoice, setInvoice] = useState("");
+  const { invoice: invoiceFromUrl } = Route.useSearch();
+  const [invoice, setInvoice] = useState(invoiceFromUrl || "");
   const [isLoading, setIsLoading] = useState(false);
   const [searchResult, setSearchResult] = useState<any>(null);
+  const [resultType, setResultType] = useState<"topup" | "joki" | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!invoice.trim()) return;
+  // Auto-search if invoice comes from URL params
+  useEffect(() => {
+    if (invoiceFromUrl) {
+      setInvoice(invoiceFromUrl);
+      doSearch(invoiceFromUrl);
+    }
+  }, [invoiceFromUrl]);
+
+  const doSearch = async (searchInvoice: string) => {
+    const trimmed = searchInvoice.trim().toUpperCase();
+    if (!trimmed) return;
 
     setIsLoading(true);
     setHasSearched(true);
     setSearchResult(null);
+    setResultType(null);
 
     try {
-      const { data, error } = await supabase
+      // First, try topup_orders
+      const { data: topupData } = await supabase
         .from("topup_orders")
         .select("*")
-        .eq("invoice_id", invoice.trim().toUpperCase())
+        .eq("invoice_id", trimmed)
         .single();
 
-      if (error || !data) {
-        setSearchResult(null);
-      } else {
-        setSearchResult(data);
+      if (topupData) {
+        setSearchResult(topupData);
+        setResultType("topup");
+        return;
       }
+
+      // If not found, try joki_orders
+      const { data: jokiData } = await supabase
+        .from("joki_orders")
+        .select("*")
+        .eq("invoice_id", trimmed)
+        .single();
+
+      if (jokiData) {
+        setSearchResult(jokiData);
+        setResultType("joki");
+        return;
+      }
+
+      // Not found in either table
+      setSearchResult(null);
     } catch (err) {
       console.error(err);
       setSearchResult(null);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doSearch(invoice);
   };
 
   const lowerStatus = searchResult?.status?.toLowerCase() || "";
@@ -72,7 +109,7 @@ function LacakPage() {
       status: lowerStatus.includes("proses") || lowerStatus === "selesai" ? "completed" : (lowerStatus.includes("menunggu") ? "active" : "completed") 
     },
     {
-      label: "Proses Pengiriman / Joki",
+      label: resultType === "joki" ? "Proses Joki" : "Proses Pengiriman",
       status: lowerStatus === "selesai" ? "completed" : (lowerStatus.includes("proses") ? "active" : "pending"),
     },
     {
@@ -80,6 +117,19 @@ function LacakPage() {
       status: lowerStatus === "selesai" ? "completed" : "pending",
     },
   ];
+
+  // Determine display values depending on order type
+  const displayNominal = resultType === "joki"
+    ? searchResult?.target_rank || "-"
+    : searchResult?.nominal || "-";
+
+  const displayIcon = resultType === "joki" ? (
+    <Swords className="h-6 w-6 text-primary" />
+  ) : (
+    <Gamepad2 className="h-6 w-6 text-primary" />
+  );
+
+  const orderTypeLabel = resultType === "joki" ? "Jasa Joki" : "Top Up";
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
@@ -117,7 +167,7 @@ function LacakPage() {
             </div>
             <input
               type="text"
-              placeholder="Contoh: INV123456789"
+              placeholder="Contoh: INV-123456 atau INV-JK-12345"
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
               className="w-full rounded-2xl border border-border/60 bg-input/60 py-4 pl-12 pr-4 text-center text-lg font-bold tracking-wider text-foreground placeholder:text-muted-foreground/50 placeholder:font-normal uppercase outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
@@ -159,17 +209,29 @@ function LacakPage() {
               {/* Decorative accent */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
 
+              {/* Order type badge */}
+              <div className="mb-3">
+                <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                  resultType === "joki"
+                    ? "border-purple-500/30 bg-purple-500/10 text-purple-400"
+                    : "border-blue-500/30 bg-blue-500/10 text-blue-400"
+                }`}>
+                  {resultType === "joki" ? <Swords className="h-3 w-3" /> : <Gamepad2 className="h-3 w-3" />}
+                  {orderTypeLabel}
+                </span>
+              </div>
+
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary/80 border border-border/50">
-                    <Gamepad2 className="h-6 w-6 text-primary" />
+                    {displayIcon}
                   </div>
                   <div>
                     <h2 className="text-sm font-medium text-muted-foreground">
                       {searchResult.game_name}
                     </h2>
                     <p className="text-base font-bold text-foreground">
-                      {searchResult.nominal}
+                      {displayNominal}
                     </p>
                   </div>
                 </div>
@@ -291,7 +353,7 @@ function LacakPage() {
             Pesanan belum masuk lebih dari <span className="font-bold text-red-400">10 menit</span>? Hubungi Admin kami via WhatsApp
           </p>
           <a
-            href="https://wa.me/6281234567890" // example wa link
+            href="https://wa.me/6281234567890"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-3 text-sm font-bold text-white shadow-lg transition-all hover:bg-[#20bd5a] hover:shadow-xl active:scale-[0.98] w-full sm:w-auto"
