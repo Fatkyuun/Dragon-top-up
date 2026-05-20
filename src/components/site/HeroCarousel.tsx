@@ -1,26 +1,36 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { games } from "@/lib/games";
 import { supabase } from "@/lib/supabase";
 import { Link } from "@tanstack/react-router";
 
 export function HeroCarousel() {
   const [index, setIndex] = useState(0);
   const [slides, setSlides] = useState<any[]>([]);
+  const [heroGames, setHeroGames] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const { data, error } = await supabase
-          .from("master_banners")
-          .select("*")
-          .eq("is_active", true)
-          .order("created_at", { ascending: false });
+        const [bannersRes, gamesRes] = await Promise.all([
+          supabase
+            .from("master_banners")
+            .select("*")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("master_games")
+            .select("*")
+            .order("name", { ascending: true })
+            .limit(6),
+        ]);
 
-        if (error) throw error;
-        setSlides(data || []);
+        if (bannersRes.error) throw bannersRes.error;
+        if (gamesRes.error) throw gamesRes.error;
+        
+        setSlides(bannersRes.data || []);
+        setHeroGames(gamesRes.data || []);
       } catch (err) {
         console.error("Error fetching banners:", err);
       } finally {
@@ -110,7 +120,7 @@ export function HeroCarousel() {
           {/* Dynamic grid from first 6 games */}
           <div className="relative hidden md:flex items-center justify-center p-6 lg:p-10">
             <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-w-md">
-              {games.slice(0, 6).map((g, i) => (
+              {heroGames.map((g, i) => (
                 <div
                   key={g.slug}
                   className="aspect-[3/4] overflow-hidden rounded-lg border border-primary/60 bg-card/40 shadow-[0_0_18px_-6px_var(--neon-purple)] animate-float opacity-0 animate-fade-in"
@@ -121,7 +131,7 @@ export function HeroCarousel() {
                   }}
                 >
                   <img
-                    src={g.cover}
+                    src={g.image_url}
                     alt={`game cover ${g.name}`}
                     className="h-full w-full object-cover"
                   />

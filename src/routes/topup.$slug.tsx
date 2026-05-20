@@ -1,14 +1,15 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react";
-import { games } from "@/lib/games";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/topup/$slug")({
   head: ({ params }) => {
-    const game = games.find((g) => g.slug === params.slug);
-    const name = game?.name ?? "Game";
+    const name = params.slug
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
     return {
       meta: [
         { title: `Top Up ${name} — NeonTopUp` },
