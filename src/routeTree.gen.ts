@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LacakRouteImport } from './routes/lacak'
 import { Route as JokiRouteImport } from './routes/joki'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -27,6 +28,11 @@ const LacakRoute = LacakRouteImport.update({
 const JokiRoute = JokiRouteImport.update({
   id: '/joki',
   path: '/joki',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
   '/joki/$slug': typeof JokiSlugRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/lacak': typeof LacakRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
+  '/contact': typeof ContactRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
   '/joki/$slug': typeof JokiSlugRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/contact'
     | '/joki'
     | '/lacak'
     | '/joki/$slug'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/contact'
     | '/lacak'
     | '/joki/$slug'
     | '/topup/$slug'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin-login'
     | '/auth'
+    | '/contact'
     | '/joki'
     | '/lacak'
     | '/joki/$slug'
@@ -138,6 +150,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
+  ContactRoute: typeof ContactRoute
   JokiRoute: typeof JokiRouteWithChildren
   LacakRoute: typeof LacakRoute
   TopupSlugRoute: typeof TopupSlugRoute
@@ -157,6 +170,13 @@ declare module '@tanstack/react-router' {
       path: '/joki'
       fullPath: '/joki'
       preLoaderRoute: typeof JokiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -228,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
+  ContactRoute: ContactRoute,
   JokiRoute: JokiRouteWithChildren,
   LacakRoute: LacakRoute,
   TopupSlugRoute: TopupSlugRoute,
