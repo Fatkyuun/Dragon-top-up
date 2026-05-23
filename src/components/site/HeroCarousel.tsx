@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Loader2, Gamepad2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { Link } from "@tanstack/react-router";
@@ -16,7 +16,7 @@ export function HeroCarousel() {
         const [bannersRes, gamesRes] = await Promise.all([
           supabase
             .from("master_banners")
-            .select("*")
+            .select("*, game:master_games(name, image_url)")
             .eq("is_active", true)
             .order("created_at", { ascending: false }),
           supabase
@@ -59,6 +59,7 @@ export function HeroCarousel() {
   if (slides.length === 0) return null; // Or some fallback
 
   const slide = slides[index];
+  const gameImageUrl = slide.game?.image_url;
 
   return (
     <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
@@ -117,27 +118,51 @@ export function HeroCarousel() {
             )}
           </div>
 
-          {/* Dynamic grid from first 6 games */}
+          {/* Right Side — Dynamic Game Image or Fallback Grid */}
           <div className="relative hidden md:flex items-center justify-center p-6 lg:p-10">
-            <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-w-md">
-              {heroGames.map((g, i) => (
-                <div
-                  key={g.slug}
-                  className="aspect-[3/4] overflow-hidden rounded-lg border border-primary/60 bg-card/40 shadow-[0_0_18px_-6px_var(--neon-purple)] animate-float opacity-0 animate-fade-in"
-                  style={{
-                    animationDelay: `${i * 120}ms`,
-                    animationFillMode: "forwards",
-                    ['--float-delay' as string]: `${i * 0.4}s`,
-                  }}
-                >
-                  <img
-                    src={g.image_url}
-                    alt={`game cover ${g.name}`}
-                    className="h-full w-full object-cover"
-                  />
+            {gameImageUrl ? (
+              /* Single game image from linked promo */
+              <div
+                key={slide.id}
+                className="relative w-full max-w-xs aspect-[3/4] overflow-hidden rounded-2xl border-2 border-primary/40 bg-card/40 shadow-[0_0_40px_-8px_var(--neon-purple)] animate-fade-in"
+              >
+                <img
+                  src={gameImageUrl}
+                  alt={slide.game?.name || slide.title}
+                  className="h-full w-full object-cover"
+                />
+                {/* Overlay with game name */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background/90 via-background/50 to-transparent p-4">
+                  <div className="flex items-center gap-2">
+                    <Gamepad2 className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-bold text-foreground">{slide.game?.name}</span>
+                  </div>
                 </div>
-              ))}
-            </div>
+                {/* Decorative glow ring */}
+                <div className="pointer-events-none absolute -inset-1 rounded-2xl border border-primary/20 animate-glow-pulse" />
+              </div>
+            ) : (
+              /* Fallback: 6-game grid when no game is linked */
+              <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-w-md">
+                {heroGames.map((g, i) => (
+                  <div
+                    key={g.slug}
+                    className="aspect-[3/4] overflow-hidden rounded-lg border border-primary/60 bg-card/40 shadow-[0_0_18px_-6px_var(--neon-purple)] animate-float opacity-0 animate-fade-in"
+                    style={{
+                      animationDelay: `${i * 120}ms`,
+                      animationFillMode: "forwards",
+                      ['--float-delay' as string]: `${i * 0.4}s`,
+                    }}
+                  >
+                    <img
+                      src={g.image_url}
+                      alt={`game cover ${g.name}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -149,3 +174,4 @@ export function HeroCarousel() {
     </section>
   );
 }
+

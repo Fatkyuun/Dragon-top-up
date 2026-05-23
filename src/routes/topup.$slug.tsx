@@ -78,6 +78,7 @@ function TopUpDetailPage() {
   const selectedPrice = selectedPackage?.price ?? 0;
   const gameName = game?.name || "Memuat...";
   const gameCover = game?.image_url || "";
+  const gameBg = game?.background_url || "";
 
   // ── Fallback: game not found ──
   if (!isLoadingData && !game) {
@@ -131,51 +132,58 @@ function TopUpDetailPage() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-28">
       {/* ═══════════════════════════════════════════
-          HEADER — blurred cover background
+          HEADER — UniPin-style full-width HD background via inline style
          ═══════════════════════════════════════════ */}
-      <header className="relative overflow-hidden">
-        {/* Blurred background image */}
-        <div className="absolute inset-0 -z-10">
-          <img
-            src={gameCover}
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-cover scale-110 blur-xl brightness-[0.35]"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
-        </div>
+      <section
+        className="relative w-full min-h-[280px] sm:min-h-[320px] flex flex-col justify-end px-6 md:px-20 mt-0"
+        style={{
+          backgroundImage: gameBg ? `url(${gameBg})` : gameCover ? `url(${gameCover})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
-        {/* Back button */}
-        <div className="mx-auto max-w-2xl px-4 pt-4">
+        {/* Back button — top-left */}
+        <div className="absolute top-4 left-4 sm:left-6 z-10">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-card/60 backdrop-blur-md px-3 py-2 text-sm font-medium text-foreground transition-all hover:bg-card/90 hover:shadow-lg border border-border/40"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-black/40 backdrop-blur-md px-3 py-2 text-sm font-medium text-white transition-all hover:bg-black/60 hover:shadow-lg border border-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Link>
         </div>
 
-        {/* Game info */}
-        <div className="mx-auto max-w-2xl px-4 pb-8 pt-6 flex items-center gap-4">
-          <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl border-2 border-primary/50 shadow-[0_0_24px_-4px_var(--neon-purple)]">
+        {/* Game info — bottom of the header, on top of overlay */}
+        <div className="relative z-10 flex items-center gap-5 pb-6 pt-16">
+          {/* Game logo/icon */}
+          <div className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-2xl border-2 border-white/20 shadow-[0_0_30px_-4px_rgba(0,0,0,0.5)] bg-black/20 backdrop-blur-sm">
             <img
               src={gameCover}
               alt={gameName}
               className="h-full w-full object-cover"
             />
           </div>
+          {/* Game title + meta */}
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight truncate">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white drop-shadow-lg">
               {isLoadingData ? <span className="animate-pulse">Memuat Data Game...</span> : gameName}
             </h1>
-            <p className="mt-1 flex items-center gap-1.5 text-sm text-accent">
+            <p className="mt-1.5 flex items-center gap-1.5 text-sm text-emerald-400 font-medium drop-shadow-md">
               <Zap className="h-3.5 w-3.5" />
-              Proses Cepat & Otomatis
+              Proses Cepat &amp; Otomatis
             </p>
+            {game?.id_label && (
+              <p className="mt-1 text-xs text-gray-300/80 drop-shadow-md">
+                Masukkan {game.id_label}{game.zone_label ? ` & ${game.zone_label}` : ''} di bawah
+              </p>
+            )}
           </div>
         </div>
-      </header>
+      </section>
 
       {/* ═══════════════════════════════════════════
           CONTENT — stacked cards

@@ -40,10 +40,10 @@ function AdminDashboard() {
 
   // Add state
   const [isAddingBanner, setIsAddingBanner] = useState(false);
-  const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
+  const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "" });
   const [isAddingGame, setIsAddingGame] = useState(false);
   const [isAddingPackage, setIsAddingPackage] = useState(false);
-  const [newGame, setNewGame] = useState({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "" });
+  const [newGame, setNewGame] = useState({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "", background_url: "" });
   const [newPackage, setNewPackage] = useState({ game_slug: "", category: "topup", item_name: "", price: "" });
 
   // Edit states
@@ -122,11 +122,11 @@ function AdminDashboard() {
   const handleAddBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.from("master_banners").insert([{ ...newBanner, is_active: true }]);
+      const { error } = await supabase.from("master_banners").insert([{ ...newBanner, is_active: true, game_slug: newBanner.game_slug || null }]);
       if (error) throw error;
       toast.success("Promo berhasil ditambahkan");
       setIsAddingBanner(false);
-      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "" });
+      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "" });
       fetchOrders();
     } catch (err: any) {
       toast.error("Gagal menambah promo", { description: err.message });
@@ -143,6 +143,7 @@ function AdminDashboard() {
         tag_text: editingBanner.tag_text,
         button_text: editingBanner.button_text,
         button_link: editingBanner.button_link,
+        game_slug: editingBanner.game_slug || null,
       }).eq("id", editingBanner.id);
       if (error) throw error;
       toast.success("Data berhasil diperbarui!");
@@ -188,7 +189,7 @@ function AdminDashboard() {
       if (error) throw error;
       toast.success("Game berhasil ditambahkan!");
       setIsAddingGame(false);
-      setNewGame({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "" });
+      setNewGame({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "", background_url: "" });
       fetchOrders();
     } catch (err: any) {
       toast.error("Gagal menambah game", { description: err.message });
@@ -199,13 +200,15 @@ function AdminDashboard() {
     e.preventDefault();
     setIsUpdating(true);
     try {
+      const originalSlug = editingGame._originalSlug || editingGame.slug;
       const { error } = await supabase.from("master_games").update({
         name: editingGame.name,
         slug: editingGame.slug,
         image_url: editingGame.image_url,
+        background_url: editingGame.background_url || null,
         id_label: editingGame.id_label,
         zone_label: editingGame.zone_label,
-      }).eq("id", editingGame.id);
+      }).eq("slug", originalSlug);
       if (error) throw error;
       toast.success("Data berhasil diperbarui!");
       setEditingGame(null);
@@ -217,15 +220,17 @@ function AdminDashboard() {
     }
   };
 
-  const handleDeleteGame = async (id: number) => {
+  const handleDeleteGame = async (slug: string) => {
     if (!confirm("Hapus game ini?")) return;
     try {
-      const { error } = await supabase.from("master_games").delete().eq("id", id);
+      setGames((prev) => prev.filter((g) => g.slug !== slug));
+      const { error } = await supabase.from("master_games").delete().eq("slug", slug);
       if (error) throw error;
       toast.success("Game berhasil dihapus!");
       fetchOrders();
     } catch (err: any) {
       toast.error("Gagal menghapus game", { description: err.message });
+      fetchOrders();
     }
   };
 
@@ -535,6 +540,20 @@ function AdminDashboard() {
                         <label className="text-xs font-medium text-muted-foreground mb-1 block">Link Tombol</label>
                         <input required type="text" value={newBanner.button_link} onChange={e => setNewBanner({...newBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="/topup/mobile-legends" />
                       </div>
+                      <div className="md:col-span-2">
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game (Opsional)</label>
+                        <select
+                          value={newBanner.game_slug}
+                          onChange={e => setNewBanner({...newBanner, game_slug: e.target.value})}
+                          className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none appearance-none cursor-pointer"
+                        >
+                          <option value="">— Tidak dihubungkan ke game —</option>
+                          {games.map((g) => (
+                            <option key={g.slug} value={g.slug}>{g.name}</option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">Gambar game akan ditampilkan di Hero Banner jika dihubungkan.</p>
+                      </div>
                     </div>
                     <div className="flex justify-end pt-2">
                       <Button type="submit" className="bg-primary text-primary-foreground">Simpan Promo</Button>
@@ -547,19 +566,29 @@ function AdminDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
-                      <tr><th className="px-6 py-4">Info Promo</th><th className="px-6 py-4">Teks Tombol</th><th className="px-6 py-4">Link Tombol</th><th className="px-6 py-4 text-center">Status</th><th className="px-6 py-4 text-right">Aksi</th></tr>
+                      <tr><th className="px-6 py-4">Info Promo</th><th className="px-6 py-4">Game</th><th className="px-6 py-4">Teks Tombol</th><th className="px-6 py-4">Link Tombol</th><th className="px-6 py-4 text-center">Status</th><th className="px-6 py-4 text-right">Aksi</th></tr>
                     </thead>
                     <tbody className="divide-y divide-border/30">
                       {loading ? (
-                        <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                        <tr><td colSpan={6} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
                       ) : banners.length === 0 ? (
-                        <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada promo banner.</td></tr>
+                        <tr><td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada promo banner.</td></tr>
                       ) : banners.map((b) => (
                         <tr key={b.id} className={`hover:bg-white/5 transition-colors ${!b.is_active ? "opacity-60" : ""}`}>
                           <td className="px-6 py-4">
                             {b.tag_text && <span className="inline-block mb-1 text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded font-bold uppercase">{b.tag_text}</span>}
                             <p className="font-bold text-base text-foreground">{b.title}</p>
                             <p className="text-xs text-muted-foreground mt-1 max-w-[200px] truncate">{b.subtitle}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            {b.game_slug ? (
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                                <Gamepad2 className="h-3 w-3" />
+                                {games.find((g) => g.slug === b.game_slug)?.name || b.game_slug}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-muted-foreground/50 italic">Tidak ada</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 font-semibold">{b.button_text}</td>
                           <td className="px-6 py-4 text-muted-foreground text-xs">{b.button_link}</td>
@@ -634,8 +663,13 @@ function AdminDashboard() {
                           <input required type="text" value={newGame.slug} onChange={e => setNewGame({...newGame, slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="mobile-legends" />
                         </div>
                         <div className="md:col-span-2">
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (Cover)</label>
-                          <input required type="text" value={newGame.image_url} onChange={e => setNewGame({...newGame, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="https://example.com/image.jpg" />
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar (Icon/Square)</label>
+                          <input required type="text" value={newGame.image_url} onChange={e => setNewGame({...newGame, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="https://example.com/icon.jpg" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar Background (Fanart HD) — Opsional</label>
+                          <input type="text" value={newGame.background_url} onChange={e => setNewGame({...newGame, background_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="https://example.com/fanart-hd.jpg" />
+                          <p className="text-[10px] text-muted-foreground/60 mt-1">Gambar latar belakang HD untuk halaman detail top up (seperti UniPin). Rasio ideal: 16:9 landscape.</p>
                         </div>
                         <div>
                           <label className="text-xs font-medium text-muted-foreground mb-1 block">Label ID Utama</label>
@@ -676,10 +710,10 @@ function AdminDashboard() {
                               {g.zone_label && <span className="block text-muted-foreground">+ {g.zone_label}</span>}
                             </td>
                             <td className="px-6 py-4 text-right flex items-center justify-end gap-1 h-full pt-6">
-                              <button onClick={() => setEditingGame(g)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
+                              <button onClick={() => setEditingGame({ ...g, _originalSlug: g.slug })} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
                                 <Edit className="h-4 w-4" />
                               </button>
-                              <button onClick={() => handleDeleteGame(g.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                              <button onClick={() => handleDeleteGame(g.slug)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </td>
@@ -830,6 +864,20 @@ function AdminDashboard() {
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Link Tombol</label>
                   <input required type="text" value={editingBanner.button_link} onChange={e => setEditingBanner({...editingBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
                 </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game (Opsional)</label>
+                  <select
+                    value={editingBanner.game_slug || ""}
+                    onChange={e => setEditingBanner({...editingBanner, game_slug: e.target.value})}
+                    className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="">— Tidak dihubungkan ke game —</option>
+                    {games.map((g) => (
+                      <option key={g.slug} value={g.slug}>{g.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Gambar game akan ditampilkan di Hero Banner jika dihubungkan.</p>
+                </div>
               </div>
               <div className="flex justify-end pt-4 gap-2">
                 <Button type="button" variant="ghost" onClick={() => setEditingBanner(null)}>Batal</Button>
@@ -865,8 +913,13 @@ function AdminDashboard() {
                   <input required type="text" value={editingGame.slug} onChange={e => setEditingGame({...editingGame, slug: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Image URL (Cover)</label>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar (Icon/Square)</label>
                   <input required type="text" value={editingGame.image_url} onChange={e => setEditingGame({...editingGame, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar Background (Fanart HD) — Opsional</label>
+                  <input type="text" value={editingGame.background_url || ""} onChange={e => setEditingGame({...editingGame, background_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Gambar latar belakang HD untuk halaman detail top up. Rasio ideal: 16:9 landscape.</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Label ID Utama</label>
