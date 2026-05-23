@@ -16,7 +16,7 @@ export function HeroCarousel() {
         const [bannersRes, gamesRes] = await Promise.all([
           supabase
             .from("master_banners")
-            .select("*, game:master_games(name, image_url)")
+            .select("*, game:master_games(name, image_url, background_url)")
             .eq("is_active", true)
             .order("created_at", { ascending: false }),
           supabase
@@ -60,19 +60,37 @@ export function HeroCarousel() {
 
   const slide = slides[index];
   const gameImageUrl = slide.game?.image_url;
+  const gameBgUrl = slide.game?.background_url;
 
   return (
     <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
-      <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon">
-        <div className="grid md:grid-cols-2 min-h-[360px] md:min-h-[440px]">
+      <div 
+        className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon"
+        style={gameBgUrl ? { backgroundImage: `url(${gameBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+      >
+        {/* Lapisan Overlay Gelap */}
+        {gameBgUrl && (
+          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent"></div>
+        )}
+
+        <div className="grid md:grid-cols-2 min-h-[360px] md:min-h-[440px] relative z-10">
           {/* Text */}
-          <div className="relative z-10 flex flex-col justify-center gap-5 p-6 sm:p-10 md:p-12">
-            {slide.tag_text && (
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-                <Sparkles className="h-3.5 w-3.5" />
-                {slide.tag_text}
-              </span>
-            )}
+          <div className="flex flex-col justify-center gap-5 p-6 sm:p-10 md:p-12">
+            <div className="flex flex-wrap items-center gap-3">
+              {slide.tag_text && (
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {slide.tag_text}
+                </span>
+              )}
+              {/* Small game badge if HD background is used */}
+              {gameBgUrl && gameImageUrl && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 py-1 pl-1 pr-3 text-xs font-semibold text-primary">
+                  <img src={gameImageUrl} alt={slide.game?.name} className="h-5 w-5 rounded-full object-cover" />
+                  {slide.game?.name}
+                </span>
+              )}
+            </div>
             <h1
               key={slide.title}
               className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] animate-fade-in"
@@ -120,8 +138,11 @@ export function HeroCarousel() {
 
           {/* Right Side — Dynamic Game Image or Fallback Grid */}
           <div className="relative hidden md:flex items-center justify-center p-6 lg:p-10">
-            {gameImageUrl ? (
-              /* Single game image from linked promo */
+            {gameBgUrl ? (
+              /* Jika background HD dipakai, kosongkan sisi kanan agar artwork terlihat jelas */
+              null
+            ) : gameImageUrl ? (
+              /* Single game image from linked promo (tanpa background HD) */
               <div
                 key={slide.id}
                 className="relative w-full max-w-xs aspect-[3/4] overflow-hidden rounded-2xl border-2 border-primary/40 bg-card/40 shadow-[0_0_40px_-8px_var(--neon-purple)] animate-fade-in"
