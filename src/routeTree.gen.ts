@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UpdatePasswordRouteImport } from './routes/update-password'
 import { Route as LacakRouteImport } from './routes/lacak'
 import { Route as JokiRouteImport } from './routes/joki'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -20,6 +21,11 @@ import { Route as JokiIndexRouteImport } from './routes/joki.index'
 import { Route as TopupSlugRouteImport } from './routes/topup.$slug'
 import { Route as JokiSlugRouteImport } from './routes/joki.$slug'
 
+const UpdatePasswordRoute = UpdatePasswordRouteImport.update({
+  id: '/update-password',
+  path: '/update-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LacakRoute = LacakRouteImport.update({
   id: '/lacak',
   path: '/lacak',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
   '/joki/': typeof JokiIndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
   '/lacak': typeof LacakRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
   '/joki': typeof JokiIndexRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
+  '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
   '/joki/': typeof JokiIndexRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/joki'
     | '/lacak'
+    | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
     | '/joki/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/contact'
     | '/lacak'
+    | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
     | '/joki'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/joki'
     | '/lacak'
+    | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
     | '/joki/'
@@ -153,11 +165,19 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   JokiRoute: typeof JokiRouteWithChildren
   LacakRoute: typeof LacakRoute
+  UpdatePasswordRoute: typeof UpdatePasswordRoute
   TopupSlugRoute: typeof TopupSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/update-password': {
+      id: '/update-password'
+      path: '/update-password'
+      fullPath: '/update-password'
+      preLoaderRoute: typeof UpdatePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lacak': {
       id: '/lacak'
       path: '/lacak'
@@ -251,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   JokiRoute: JokiRouteWithChildren,
   LacakRoute: LacakRoute,
+  UpdatePasswordRoute: UpdatePasswordRoute,
   TopupSlugRoute: TopupSlugRoute,
 }
 export const routeTree = rootRouteImport

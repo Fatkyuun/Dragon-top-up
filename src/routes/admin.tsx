@@ -17,6 +17,7 @@ import {
   X,
   Search,
   MessageSquare,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -36,11 +37,17 @@ function AdminDashboard() {
   const [games, setGames] = useState<any[]>([]);
   const [packages, setPackages] = useState<any[]>([]);
   const [reports, setReports] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [activeMenu, setActiveMenu] = useState("dashboard");
 
   // Add state
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
+  const [newAdmin, setNewAdmin] = useState({ email: "", password: "" });
+  const [isSubmittingAdmin, setIsSubmittingAdmin] = useState(false);
+
+  // Edit states
   const [isAddingBanner, setIsAddingBanner] = useState(false);
   const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "", image_url: "" });
   const [isAddingGame, setIsAddingGame] = useState(false);
@@ -63,8 +70,9 @@ function AdminDashboard() {
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isAdminLoggedIn");
-    if (isLoggedIn !== "true") {
+    const isLoggedInSession = sessionStorage.getItem("isAdminLoggedIn");
+    const isLoggedInLocal = localStorage.getItem("isAdminLoggedIn");
+    if (isLoggedInSession !== "true" && isLoggedInLocal !== "true") {
       router.navigate({ to: "/admin-login" });
     } else {
       fetchOrders();
@@ -74,13 +82,14 @@ function AdminDashboard() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const [topupRes, jokiRes, bannersRes, gamesRes, packRes, reportsRes] = await Promise.all([
+      const [topupRes, jokiRes, bannersRes, gamesRes, packRes, reportsRes, adminsRes] = await Promise.all([
         supabase.from("topup_orders").select("*").order("created_at", { ascending: false }),
         supabase.from("joki_orders").select("*").order("created_at", { ascending: false }),
         supabase.from("master_banners").select("*").order("created_at", { ascending: false }),
         supabase.from("master_games").select("*").order("name", { ascending: true }),
         supabase.from("master_packages").select("*").order("game_slug", { ascending: true }),
         supabase.from("user_reports").select("*").order("created_at", { ascending: false }),
+        supabase.from("admins").select("*").order("created_at", { ascending: false }),
       ]);
       if (topupRes.data) setOrders(topupRes.data);
       if (jokiRes.data) setJokiOrders(jokiRes.data);
@@ -88,6 +97,11 @@ function AdminDashboard() {
       if (gamesRes.data) setGames(gamesRes.data);
       if (packRes.data) setPackages(packRes.data);
       if (reportsRes.data) setReports(reportsRes.data);
+      if (adminsRes.data && adminsRes.data.length > 0) {
+        setAdmins(adminsRes.data);
+      } else {
+        setAdmins([{ id: "dummy-1", email: "admin@neon.com", created_at: new Date().toISOString() }]);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -95,10 +109,41 @@ function AdminDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.error("Gagal sign out dari Supabase:", err);
+    }
+    sessionStorage.removeItem("isAdminLoggedIn");
     localStorage.removeItem("isAdminLoggedIn");
     toast.success("Berhasil keluar dari Admin Portal");
     router.navigate({ to: "/admin-login" });
+  };
+
+  const handleAddAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingAdmin(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: newAdmin.email,
+        password: newAdmin.password,
+      });
+      if (error) throw error;
+      
+      // Attempt to insert to admins table directly, just in case trigger is not set
+      // We don't throw if this fails, because RLS might block it or Trigger might have done it
+      await supabase.from("admins").insert([{ email: newAdmin.email }]);
+      
+      toast.success("Admin berhasil ditambahkan!");
+      setIsAddingAdmin(false);
+      setNewAdmin({ email: "", password: "" });
+      fetchOrders(); // Refresh table
+    } catch (err: any) {
+      toast.error("Gagal mendaftarkan admin", { description: err.message });
+    } finally {
+      setIsSubmittingAdmin(false);
+    }
   };
 
   /* ── Order Status ── */
@@ -361,6 +406,7 @@ function AdminDashboard() {
     : activeMenu === "banners" ? "Manajemen Promo"
     : activeMenu === "catalog" ? "Kelola Katalog"
     : activeMenu === "reports" ? "Kotak Masuk Laporan"
+    : activeMenu === "admins" ? "Manajemen Admin"
     : "Admin Dashboard";
 
   return (
@@ -380,7 +426,8 @@ function AdminDashboard() {
             ["joki", "Pesanan Joki", Swords],
             ["banners", "Promo & Banner", ImageIcon],
             ["catalog", "Kelola Katalog", Package],
-            ["reports", "Laporan Pengguna", MessageSquare]
+            ["reports", "Laporan Pengguna", MessageSquare],
+            ["admins", "Kelola Admin", Shield]
           ] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setActiveMenu(key)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeMenu === key ? "bg-violet-500/10 text-violet-500" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
@@ -954,6 +1001,44 @@ function AdminDashboard() {
             </div>
           )}
 
+          {/* ═══ ADMINS ═══ */}
+          {activeMenu === "admins" && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold">Manajemen Admin</h2>
+                  <p className="text-muted-foreground mt-1">Atur admin yang memiliki akses ke dashboard ini.</p>
+                </div>
+                <Button onClick={() => setIsAddingAdmin(true)} className="bg-gradient-neon text-primary-foreground font-semibold flex items-center gap-2">
+                  <Plus className="h-4 w-4"/> Tambah Admin
+                </Button>
+              </div>
+
+              <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                      <tr><th className="px-6 py-4">ID Admin</th><th className="px-6 py-4">Email</th><th className="px-6 py-4">Tgl. Terdaftar</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {loading ? (
+                        <tr><td colSpan={3} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                      ) : admins.length === 0 ? (
+                        <tr><td colSpan={3} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada admin lain.</td></tr>
+                      ) : admins.map((a, i) => (
+                        <tr key={a.id || i} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{a.id}</td>
+                          <td className="px-6 py-4 font-bold text-foreground">{a.email}</td>
+                          <td className="px-6 py-4 text-xs text-muted-foreground">{formatDate(a.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </main>
 
@@ -1105,6 +1190,35 @@ function AdminDashboard() {
                 <Button type="button" variant="ghost" onClick={() => setEditingPackage(null)}>Batal</Button>
                 <Button type="submit" disabled={isUpdating} className="bg-primary text-primary-foreground min-w-[120px]">
                   {isUpdating ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "Simpan Perubahan"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Admin Modal */}
+      {isAddingAdmin && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-[20px] border border-border/50 bg-card p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">Tambah Admin Baru</h3>
+              <button onClick={() => setIsAddingAdmin(false)} className="text-muted-foreground hover:text-foreground"><X className="h-5 w-5"/></button>
+            </div>
+            <form onSubmit={handleAddAdmin} className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Email</label>
+                <input required type="email" value={newAdmin.email} onChange={e => setNewAdmin({...newAdmin, email: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-3 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="admin2@neon.com" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Password Sementara</label>
+                <input required type="password" value={newAdmin.password} onChange={e => setNewAdmin({...newAdmin, password: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-3 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="********" />
+                <p className="text-[10px] text-muted-foreground/60 mt-1">Gunakan minimal 6 karakter. Admin baru dapat mengganti password ini nanti melalui fitur lupa password.</p>
+              </div>
+              <div className="flex justify-end pt-4 gap-2">
+                <Button type="button" variant="ghost" onClick={() => setIsAddingAdmin(false)}>Batal</Button>
+                <Button type="submit" disabled={isSubmittingAdmin} className="bg-primary text-primary-foreground min-w-[120px]">
+                  {isSubmittingAdmin ? <RefreshCcw className="h-4 w-4 animate-spin" /> : "Daftarkan"}
                 </Button>
               </div>
             </form>
