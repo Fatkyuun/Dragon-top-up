@@ -30,8 +30,8 @@ function ContactPage() {
           name: formData.name,
           email: formData.email,
           whatsapp: formData.whatsapp || null,
-          report_text: formData.report_text,
-          screenshot_link: formData.screenshot_link || null,
+          complaint: formData.report_text,
+          screenshot_url: formData.screenshot_link || null,
           status: "Menunggu",
         },
       ]);

@@ -6,8 +6,7 @@ const quickLinks = [
   { label: "Syarat & Ketentuan", href: "/" },
   { label: "Kebijakan Privasi", href: "/" },
   { label: "FAQ", href: "/" },
-  { label: "Hubungi Kami", href: "/contact" },
-  { label: "Lapor Bug / Masalah", href: "/contact" },
+  { label: "Hubungi Kami & Laporan", href: "/contact" },
 ];
 
 export function Footer() {

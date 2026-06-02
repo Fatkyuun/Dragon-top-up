@@ -42,7 +42,7 @@ function AdminDashboard() {
 
   // Add state
   const [isAddingBanner, setIsAddingBanner] = useState(false);
-  const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "" });
+  const [newBanner, setNewBanner] = useState({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "", image_url: "" });
   const [isAddingGame, setIsAddingGame] = useState(false);
   const [isAddingPackage, setIsAddingPackage] = useState(false);
   const [newGame, setNewGame] = useState({ name: "", slug: "", image_url: "", id_label: "User ID", zone_label: "", background_url: "" });
@@ -57,6 +57,10 @@ function AdminDashboard() {
   // Search states
   const [searchGameQuery, setSearchGameQuery] = useState("");
   const [searchPackageQuery, setSearchPackageQuery] = useState("");
+
+  const [currentPageGames, setCurrentPageGames] = useState(1);
+  const [currentPageProducts, setCurrentPageProducts] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     const isLoggedIn = localStorage.getItem("isAdminLoggedIn");
@@ -142,7 +146,7 @@ function AdminDashboard() {
       if (error) throw error;
       toast.success("Promo berhasil ditambahkan");
       setIsAddingBanner(false);
-      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "" });
+      setNewBanner({ title: "", subtitle: "", tag_text: "", button_text: "", button_link: "", game_slug: "", image_url: "" });
       fetchOrders();
     } catch (err: any) {
       toast.error("Gagal menambah promo", { description: err.message });
@@ -160,6 +164,7 @@ function AdminDashboard() {
         button_text: editingBanner.button_text,
         button_link: editingBanner.button_link,
         game_slug: editingBanner.game_slug || null,
+        image_url: editingBanner.image_url,
       }).eq("id", editingBanner.id);
       if (error) throw error;
       toast.success("Data berhasil diperbarui!");
@@ -319,6 +324,8 @@ function AdminDashboard() {
 
   /* ── Filtered Catalog ── */
   const filteredGames = games.filter(game => game.name.toLowerCase().includes(searchGameQuery.toLowerCase()));
+  const totalGamesPages = Math.max(1, Math.ceil(filteredGames.length / ITEMS_PER_PAGE));
+  const paginatedGames = filteredGames.slice((currentPageGames - 1) * ITEMS_PER_PAGE, currentPageGames * ITEMS_PER_PAGE);
   
   const filteredPackages = packages.filter(p => {
     const gameObj = games.find(g => g.slug === p.game_slug);
@@ -326,6 +333,8 @@ function AdminDashboard() {
     const search = searchPackageQuery.toLowerCase();
     return p.item_name.toLowerCase().includes(search) || gameName.toLowerCase().includes(search);
   });
+  const totalProductsPages = Math.max(1, Math.ceil(filteredPackages.length / ITEMS_PER_PAGE));
+  const paginatedPackages = filteredPackages.slice((currentPageProducts - 1) * ITEMS_PER_PAGE, currentPageProducts * ITEMS_PER_PAGE);
 
   const StatusDropdown = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <div className="relative inline-block w-40">
@@ -600,6 +609,10 @@ function AdminDashboard() {
                         <input required type="text" value={newBanner.button_link} onChange={e => setNewBanner({...newBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="/topup/mobile-legends" />
                       </div>
                       <div className="md:col-span-2">
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar Promo (Banner HD)</label>
+                        <input type="text" value={newBanner.image_url} onChange={e => setNewBanner({...newBanner, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" placeholder="https://example.com/banner.jpg" />
+                      </div>
+                      <div className="md:col-span-2">
                         <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game (Opsional)</label>
                         <select
                           value={newBanner.game_slug}
@@ -694,7 +707,10 @@ function AdminDashboard() {
                         type="text"
                         placeholder="Cari nama game..."
                         value={searchGameQuery}
-                        onChange={(e) => setSearchGameQuery(e.target.value)}
+                        onChange={(e) => {
+                          setSearchGameQuery(e.target.value);
+                          setCurrentPageGames(1);
+                        }}
                         className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
                       />
                     </div>
@@ -755,9 +771,9 @@ function AdminDashboard() {
                       <tbody className="divide-y divide-border/30">
                         {loading ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                        ) : filteredGames.length === 0 ? (
+                        ) : paginatedGames.length === 0 ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Tidak ada data yang cocok dengan pencarian Anda.</td></tr>
-                        ) : filteredGames.map((g) => (
+                        ) : paginatedGames.map((g) => (
                           <tr key={g.id} className="hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4">
                               <img src={g.image_url} alt={g.name} className="h-10 w-10 rounded object-cover bg-secondary/50" />
@@ -781,6 +797,29 @@ function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
+                  {totalGamesPages > 1 && (
+                    <div className="p-4 border-t border-border/50 flex items-center justify-between bg-secondary/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPageGames === 1}
+                        onClick={() => setCurrentPageGames(p => Math.max(1, p - 1))}
+                        className="border-border/60 hover:bg-secondary/60 text-xs"
+                      >
+                        Sebelumnya
+                      </Button>
+                      <span className="text-xs font-medium text-muted-foreground">Halaman {currentPageGames} dari {totalGamesPages}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPageGames === totalGamesPages}
+                        onClick={() => setCurrentPageGames(p => Math.min(totalGamesPages, p + 1))}
+                        className="border-border/60 hover:bg-secondary/60 text-xs"
+                      >
+                        Selanjutnya
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -798,7 +837,10 @@ function AdminDashboard() {
                         type="text"
                         placeholder="Cari nama produk / game..."
                         value={searchPackageQuery}
-                        onChange={(e) => setSearchPackageQuery(e.target.value)}
+                        onChange={(e) => {
+                          setSearchPackageQuery(e.target.value);
+                          setCurrentPageProducts(1);
+                        }}
                         className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
                       />
                     </div>
@@ -852,9 +894,9 @@ function AdminDashboard() {
                       <tbody className="divide-y divide-border/30">
                         {loading ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                        ) : filteredPackages.length === 0 ? (
+                        ) : paginatedPackages.length === 0 ? (
                           <tr><td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">Tidak ada data yang cocok dengan pencarian Anda.</td></tr>
-                        ) : filteredPackages.map((p) => {
+                        ) : paginatedPackages.map((p) => {
                           const gameObj = games.find(g => g.slug === p.game_slug);
                           return (
                             <tr key={p.id} className="hover:bg-white/5 transition-colors">
@@ -883,6 +925,29 @@ function AdminDashboard() {
                       </tbody>
                     </table>
                   </div>
+                  {totalProductsPages > 1 && (
+                    <div className="p-4 border-t border-border/50 flex items-center justify-between bg-secondary/10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPageProducts === 1}
+                        onClick={() => setCurrentPageProducts(p => Math.max(1, p - 1))}
+                        className="border-border/60 hover:bg-secondary/60 text-xs"
+                      >
+                        Sebelumnya
+                      </Button>
+                      <span className="text-xs font-medium text-muted-foreground">Halaman {currentPageProducts} dari {totalProductsPages}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPageProducts === totalProductsPages}
+                        onClick={() => setCurrentPageProducts(p => Math.min(totalProductsPages, p + 1))}
+                        className="border-border/60 hover:bg-secondary/60 text-xs"
+                      >
+                        Selanjutnya
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -922,6 +987,10 @@ function AdminDashboard() {
                 <div>
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Link Tombol</label>
                   <input required type="text" value={editingBanner.button_link} onChange={e => setEditingBanner({...editingBanner, button_link: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">URL Gambar Promo (Banner HD)</label>
+                  <input type="text" value={editingBanner.image_url || ""} onChange={e => setEditingBanner({...editingBanner, image_url: e.target.value})} className="w-full rounded-lg border border-border/60 bg-input/40 px-3 py-2 text-sm focus:border-primary focus:ring-1 outline-none" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs font-medium text-muted-foreground mb-1 block">Pilih Game (Opsional)</label>

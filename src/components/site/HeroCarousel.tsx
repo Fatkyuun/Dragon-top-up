@@ -60,16 +60,16 @@ export function HeroCarousel() {
 
   const slide = slides[index];
   const gameImageUrl = slide.game?.image_url;
-  const gameBgUrl = slide.game?.background_url;
+  const bannerBgUrl = slide.image_url;
 
   return (
     <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
       <div 
         className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon"
-        style={gameBgUrl ? { backgroundImage: `url(${gameBgUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+        style={{ backgroundImage: bannerBgUrl ? `url(${bannerBgUrl})` : 'var(--warna-marun-default)', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {/* Lapisan Overlay Gelap */}
-        {gameBgUrl && (
+        {bannerBgUrl && (
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent"></div>
         )}
 
@@ -84,7 +84,7 @@ export function HeroCarousel() {
                 </span>
               )}
               {/* Small game badge if HD background is used */}
-              {gameBgUrl && gameImageUrl && (
+              {bannerBgUrl && gameImageUrl && (
                 <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 py-1 pl-1 pr-3 text-xs font-semibold text-primary">
                   <img src={gameImageUrl} alt={slide.game?.name} className="h-5 w-5 rounded-full object-cover" />
                   {slide.game?.name}
@@ -138,7 +138,7 @@ export function HeroCarousel() {
 
           {/* Right Side — Dynamic Game Image or Fallback Grid */}
           <div className="relative hidden md:flex items-center justify-center p-6 lg:p-10">
-            {gameBgUrl ? (
+            {bannerBgUrl ? (
               /* Jika background HD dipakai, kosongkan sisi kanan agar artwork terlihat jelas */
               null
             ) : gameImageUrl ? (
