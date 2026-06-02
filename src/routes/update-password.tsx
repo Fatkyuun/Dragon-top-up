@@ -1,5 +1,5 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -17,14 +17,44 @@ function UpdatePassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  // Instruksi 2: lacak validitas sesi
+  const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+
+  // Instruksi 2: cek sesi aktif saat komponen pertama kali dimuat,
+  // dan pantau perubahan sesi via onAuthStateChange (menangkap token dari
+  // URL hash yang di-set Supabase setelah klik link reset password).
+  useEffect(() => {
+    // Cek sesi awal
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSessionValid(!!session);
+    });
+
+    // Pantau event PASSWORD_RECOVERY dan perubahan sesi lainnya
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setSessionValid(!!session);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Instruksi 2: tolak submit jika sesi tidak valid
+    if (!sessionValid) {
+      const msg = "Sesi tidak valid, silakan request reset password ulang.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       setError("Konfirmasi password tidak cocok.");
       return;
     }
-    
+
     if (newPassword.length < 6) {
       setError("Password harus minimal 6 karakter.");
       return;
@@ -34,16 +64,29 @@ function UpdatePassword() {
     setError("");
 
     try {
+      // Instruksi 1: tangkap error secara eksplisit
       const { error: updateError } = await supabase.auth.updateUser({
         password: newPassword,
       });
 
-      if (updateError) throw updateError;
-      
+      if (updateError) {
+        // Instruksi 1: gagalkan proses dan tampilkan error — JANGAN redirect
+        const msg = updateError.message || "Gagal memperbarui password.";
+        setError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      // Instruksi 3: updateUser sukses → sign out dulu, baru redirect
+      await supabase.auth.signOut();
+
       toast.success("Password berhasil diperbarui! Silakan login kembali.");
       router.navigate({ to: "/admin-login" });
     } catch (err: any) {
-      setError(err.message || "Gagal memperbarui password");
+      // Fallback untuk error jaringan / tak terduga
+      const msg = err?.message || "Terjadi kesalahan tak terduga.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -69,6 +112,21 @@ function UpdatePassword() {
             </p>
           </div>
 
+          {/* Instruksi 2: peringatan jika sedang memuat atau sesi invalid */}
+          {sessionValid === null && (
+            <div className="rounded-xl bg-muted/10 border border-border/20 p-3 text-center mb-5">
+              <p className="text-sm text-muted-foreground">Memverifikasi sesi...</p>
+            </div>
+          )}
+
+          {sessionValid === false && (
+            <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-3 text-center mb-5">
+              <p className="text-sm font-semibold text-destructive">
+                Sesi tidak valid atau sudah kedaluwarsa. Silakan request reset password ulang.
+              </p>
+            </div>
+          )}
+
           <form onSubmit={handleUpdatePassword} className="space-y-5">
             {error && (
               <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-3 text-center">
@@ -86,6 +144,7 @@ function UpdatePassword() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
                   required
+                  disabled={sessionValid === false || sessionValid === null}
                 />
               </div>
 
@@ -98,13 +157,20 @@ function UpdatePassword() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
                   required
+                  disabled={sessionValid === false || sessionValid === null}
                 />
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || !newPassword || !confirmPassword}
+              disabled={
+                isLoading ||
+                !newPassword ||
+                !confirmPassword ||
+                sessionValid === false ||
+                sessionValid === null
+              }
               className="w-full mt-4 rounded-xl bg-violet-600 py-4 text-[15px] font-bold text-white shadow-lg shadow-violet-600/20 transition-all hover:bg-violet-500 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
               {isLoading ? (
@@ -118,7 +184,7 @@ function UpdatePassword() {
             </button>
           </form>
         </div>
-        
+
         <p className="text-center text-xs text-muted-foreground mt-6">
           &copy; {new Date().getFullYear()} NeonTopUp Internal System
         </p>

@@ -19,22 +19,30 @@ function AdminLogin() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    // Simulate network delay
-    setTimeout(() => {
-      if (email === "admin@neon.com" && password === "admin123") {
-        sessionStorage.setItem("isAdminLoggedIn", "true");
-        toast.success("Berhasil masuk sebagai Admin");
-        router.navigate({ to: "/admin" });
-      } else {
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
         setError("Kredensial tidak valid");
-        setIsLoading(false);
+        return;
       }
-    }, 800);
+
+      sessionStorage.setItem("isAdminLoggedIn", "true");
+      toast.success("Berhasil masuk sebagai Admin");
+      router.navigate({ to: "/admin" });
+    } catch (err: any) {
+      setError(err?.message || "Terjadi kesalahan, coba lagi.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
