@@ -49,7 +49,7 @@ export function HeroCarousel() {
   if (isLoading) {
     return (
       <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon min-h-[360px] md:min-h-[440px] flex items-center justify-center">
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon min-h-[250px] md:min-h-[350px] lg:min-h-[440px] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </section>
@@ -70,50 +70,48 @@ export function HeroCarousel() {
       >
         {/* Lapisan Overlay Gelap */}
         {bannerBgUrl && (
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t sm:bg-gradient-to-r from-background/95 via-background/80 sm:via-background/90 to-background/20 sm:to-transparent"></div>
         )}
 
-        <div className="grid md:grid-cols-2 min-h-[360px] md:min-h-[440px] relative z-10">
+        <div className="grid md:grid-cols-2 min-h-[250px] md:min-h-[350px] lg:min-h-[440px] relative z-10">
           {/* Text */}
-          <div className="flex flex-col justify-center gap-5 p-6 sm:p-10 md:p-12">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col justify-center gap-4 sm:gap-5 p-4 sm:p-6 md:p-12 lg:p-16">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               {slide.tag_text && (
-                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
-                  <Sparkles className="h-3.5 w-3.5" />
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/40 bg-accent/10 px-2 sm:px-3 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-accent">
+                  <Sparkles className="h-3 sm:h-3.5 w-3 sm:w-3.5" />
                   {slide.tag_text}
                 </span>
               )}
               {/* Small game badge if HD background is used */}
               {bannerBgUrl && gameImageUrl && (
-                <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 py-1 pl-1 pr-3 text-xs font-semibold text-primary">
-                  <img src={gameImageUrl} alt={slide.game?.name} className="h-5 w-5 rounded-full object-cover" />
+                <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 py-0.5 sm:py-1 pl-1 pr-2 sm:pr-3 text-[10px] sm:text-xs font-semibold text-primary">
+                  <img src={gameImageUrl} alt={slide.game?.name} className="h-4 sm:h-5 w-4 sm:w-5 rounded-full object-cover" />
                   {slide.game?.name}
                 </span>
               )}
             </div>
             <h1
               key={slide.title}
-              className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.1] animate-fade-in"
+              className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold tracking-tight leading-[1.2] sm:leading-[1.1] animate-fade-in"
             >
               <span className="text-gradient-neon">{slide.title}</span>
             </h1>
-            <p className="max-w-md text-sm sm:text-base text-muted-foreground">{slide.subtitle}</p>
-            <div className="flex flex-wrap gap-3 pt-1">
+            <p className="max-w-md text-sm md:text-base text-muted-foreground/90">{slide.subtitle}</p>
+            <div className="flex flex-row flex-wrap gap-2 sm:gap-3 pt-2">
               <Button
                 asChild
-                size="lg"
-                className="bg-gradient-neon font-semibold text-primary-foreground hover:opacity-90 animate-glow-pulse"
+                className="bg-gradient-neon font-semibold text-primary-foreground hover:opacity-90 animate-glow-pulse h-auto py-2.5 px-5 text-sm md:py-3 md:px-6 md:text-base w-fit"
               >
                 <Link to={slide.button_link || "/"}>
                   {slide.button_text || "Mulai Sekarang"}
-                  <ArrowRight className="ml-1 h-4 w-4" />
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5 md:h-4 md:w-4" />
                 </Link>
               </Button>
               <Button
                 asChild
-                size="lg"
                 variant="outline"
-                className="border-border/80 bg-secondary/40 hover:bg-secondary"
+                className="border border-white/20 bg-secondary/40 hover:bg-secondary h-auto py-2.5 px-5 text-sm md:py-3 md:px-6 md:text-base w-fit"
               >
                 <Link to="/lacak">Lacak Pesanan</Link>
               </Button>
