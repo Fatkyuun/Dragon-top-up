@@ -344,7 +344,7 @@ function AdminDashboard() {
         className={`w-full appearance-none rounded-lg border pl-3 pr-8 py-1.5 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition-all focus:ring-2 focus:ring-primary/50 shadow-sm ${
           value === "selesai" ? "bg-green-500/10 border-green-500/30 text-green-500 hover:bg-green-500/20"
           : value === "sedang_diproses" ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20"
-          : "bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500/20"
+          : "bg-violet-500/10 border-violet-500/30 text-violet-500 hover:bg-violet-500/20"
         }`}
       >
         {statusOptions.map((opt) => (<option key={opt.value} value={opt.value} className="bg-card text-foreground">{opt.label}</option>))}
@@ -369,8 +369,8 @@ function AdminDashboard() {
       <aside className="w-64 border-r border-border/40 bg-card/60 backdrop-blur-xl flex flex-col shrink-0 relative z-20">
         <div className="h-16 flex items-center px-6 border-b border-border/40">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-red-600 to-orange-500 shadow-[0_0_12px_-2px_rgba(220,38,38,0.6)]"><Gamepad2 className="h-4 w-4 text-white" /></span>
-            <span className="font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">NeonAdmin</span>
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-violet-600 to-purple-500 shadow-[0_0_12px_-2px_rgba(139,92,246,0.6)]"><Gamepad2 className="h-4 w-4 text-white" /></span>
+            <span className="font-extrabold text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">NeonAdmin</span>
           </Link>
         </div>
         <nav className="flex-1 p-4 flex flex-col gap-1.5 overflow-y-auto">
@@ -383,13 +383,13 @@ function AdminDashboard() {
             ["reports", "Laporan Pengguna", MessageSquare]
           ] as const).map(([key, label, Icon]) => (
             <button key={key} onClick={() => setActiveMenu(key)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeMenu === key ? "bg-red-500/10 text-red-500" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeMenu === key ? "bg-violet-500/10 text-violet-500" : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"}`}>
               <Icon className="h-4 w-4" />{label}
             </button>
           ))}
         </nav>
         <div className="p-4 border-t border-border/40">
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all cursor-pointer">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-violet-500 hover:bg-violet-500/10 transition-all cursor-pointer">
             <LogOut className="h-4 w-4" />Keluar
           </button>
         </div>
@@ -397,7 +397,7 @@ function AdminDashboard() {
 
       {/* MAIN */}
       <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-red-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-violet-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
         <header className="h-16 flex items-center justify-between px-8 border-b border-border/40 bg-background/50 backdrop-blur-md">
           <h1 className="text-xl font-bold tracking-tight">{pageTitle}</h1>
           <button onClick={fetchOrders} className="flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground bg-secondary/40 hover:bg-secondary/80 border border-border/40 px-3.5 py-1.5 rounded-lg transition-all active:scale-95">
@@ -530,7 +530,7 @@ function AdminDashboard() {
                         <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p><p className="text-xs text-muted-foreground mt-0.5">ID: {o.user_id_game} {o.zone_id_game ? `(${o.zone_id_game})` : ""}</p></td>
                         <td className="px-6 py-4 font-semibold text-primary">{o.nominal}</td>
                         <td className="px-6 py-4 text-muted-foreground font-medium">{o.whatsapp_buyer}</td>
-                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">{formatRupiah(o.total_price)}</td>
+                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
                         <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleTopupStatusChange(o.invoice_id, v)} /></td>
                       </tr>
                     ))}
@@ -560,7 +560,7 @@ function AdminDashboard() {
                         <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p></td>
                         <td className="px-6 py-4 font-semibold text-primary">{o.nickname_game}</td>
                         <td className="px-6 py-4"><p className="font-bold text-sm">{o.target_rank}</p><p className="text-xs text-muted-foreground mt-0.5">Login: {o.login_via}</p></td>
-                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">{formatRupiah(o.total_price)}</td>
+                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
                         <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleJokiStatusChange(o.invoice_id, v)} /></td>
                       </tr>
                     ))}
@@ -677,7 +677,7 @@ function AdminDashboard() {
                             <button onClick={() => setEditingBanner(b)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
                               <Edit className="h-4 w-4" />
                             </button>
-                            <button onClick={() => handleBannerDelete(b.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                            <button onClick={() => handleBannerDelete(b.id)} className="p-2 text-violet-500 hover:bg-violet-500/10 rounded-lg transition-colors">
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </td>
@@ -788,7 +788,7 @@ function AdminDashboard() {
                               <button onClick={() => setEditingGame({ ...g, _originalSlug: g.slug })} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
                                 <Edit className="h-4 w-4" />
                               </button>
-                              <button onClick={() => handleDeleteGame(g.slug)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                              <button onClick={() => handleDeleteGame(g.slug)} className="p-2 text-violet-500 hover:bg-violet-500/10 rounded-lg transition-colors">
                                 <Trash2 className="h-4 w-4" />
                               </button>
                             </td>
@@ -915,7 +915,7 @@ function AdminDashboard() {
                                 <button onClick={() => setEditingPackage(p)} className="p-2 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-colors">
                                   <Edit className="h-4 w-4" />
                                 </button>
-                                <button onClick={() => handleDeletePackage(p.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                                <button onClick={() => handleDeletePackage(p.id)} className="p-2 text-violet-500 hover:bg-violet-500/10 rounded-lg transition-colors">
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               </td>

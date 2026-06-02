@@ -59,38 +59,37 @@ function JokiIndexPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
-      {/* HEADER */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <div className="h-full w-full bg-gradient-to-b from-primary/5 via-background to-background" />
-        </div>
-
-        <div className="mx-auto max-w-4xl px-4 pt-4">
+      {/* HEADER BANNER */}
+      <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6 mb-8">
+        <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-[#16161a] glow-neon min-h-[250px] md:min-h-[350px] flex items-center justify-center p-6 md:p-12">
+          {/* Subtle Background Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
+          
+          {/* Back Button */}
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-card/60 backdrop-blur-md px-3 py-2 text-sm font-medium text-foreground transition-all hover:bg-card/90 hover:shadow-lg border border-border/40"
+            className="absolute top-4 left-4 md:top-6 md:left-6 z-20 inline-flex items-center gap-1.5 rounded-lg bg-black/50 backdrop-blur-md px-3 py-2 text-sm font-medium text-white transition-all hover:bg-black/70 border border-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
             Kembali
           </Link>
-        </div>
 
-        <div className="mx-auto max-w-4xl px-4 pb-10 pt-8 text-center">
-          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-neon shadow-[0_0_32px_-4px_var(--neon-purple)]">
-            <Swords className="h-8 w-8 text-primary-foreground" />
+          <div className="relative z-10 text-center w-full max-w-2xl mx-auto flex flex-col items-center">
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 shadow-[0_0_32px_-4px_rgba(139,92,246,0.5)]">
+              <Swords className="h-8 w-8 text-white" />
+            </div>
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3 drop-shadow-md">
+              Layanan <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-300">Joki Rank & Jasa</span>
+            </h1>
+            <p className="text-sm md:text-base text-gray-300 max-w-md mx-auto drop-shadow-md">
+              Pilih game yang ingin kamu joki. Pro player kami siap membantu mencapai rank impianmu dengan cepat dan aman!
+            </p>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Jasa Joki{" "}
-            <span className="text-gradient-neon">Profesional</span>
-          </h1>
-          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
-            Pilih game yang ingin kamu joki. Pro player kami siap membantu!
-          </p>
         </div>
-      </header>
+      </section>
 
       {/* GAME GRID */}
-      <main className="mx-auto max-w-4xl px-4">
+      <main className="mx-auto max-w-7xl px-4 sm:px-6">
         {isLoading ? (
           <div className="py-20 text-center text-muted-foreground flex flex-col items-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
@@ -102,7 +101,7 @@ function JokiIndexPage() {
             <p>Belum ada layanan joki tersedia.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
             {jokiGames.map((g) => (
               <Link
                 key={g.slug}
@@ -126,7 +125,7 @@ function JokiIndexPage() {
                 </div>
 
                 {/* Tag */}
-                <span className="absolute left-2 top-2 rounded-md bg-gradient-neon px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground shadow-md">
+                <span className="absolute left-2 top-2 rounded-md bg-violet-500/10 border border-violet-500/30 px-2 py-0.5 text-[10px] font-bold uppercase text-violet-400 backdrop-blur-md shadow-sm">
                   Joki
                 </span>
 

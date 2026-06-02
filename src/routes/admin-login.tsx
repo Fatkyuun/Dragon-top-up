@@ -38,17 +38,17 @@ function AdminLogin() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0a0000] px-4 relative overflow-hidden font-sans">
       {/* Subtle Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-900/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-md z-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="rounded-[24px] border border-border/30 bg-[#120505]/80 p-8 shadow-2xl backdrop-blur-xl">
           {/* Header */}
           <div className="flex flex-col items-center mb-10">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-red-600 to-red-900 shadow-[0_0_24px_-4px_rgba(220,38,38,0.5)] mb-4">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-900 shadow-[0_0_24px_-4px_rgba(139,92,246,0.5)] mb-4">
               <Gamepad2 className="h-8 w-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
-              Admin <span className="text-red-500">Portal</span>
+              Admin <span className="text-violet-500">Portal</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Silakan masuk untuk mengelola sistem
@@ -58,32 +58,32 @@ function AdminLogin() {
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             {error && (
-              <div className="rounded-xl bg-red-500/10 border border-red-500/20 p-3 text-center">
-                <p className="text-sm font-semibold text-red-500">{error}</p>
+              <div className="rounded-xl bg-violet-500/10 border border-violet-500/20 p-3 text-center">
+                <p className="text-sm font-semibold text-violet-500">{error}</p>
               </div>
             )}
 
             <div className="space-y-4">
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-red-500" />
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-violet-500" />
                 <input
                   type="text"
                   placeholder="Username / Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
+                  className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
                   required
                 />
               </div>
 
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-red-500" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-violet-500" />
                 <input
                   type="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
+                  className="w-full rounded-xl border border-border/40 bg-black/40 py-4 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
                   required
                 />
               </div>
@@ -92,7 +92,7 @@ function AdminLogin() {
             <button
               type="submit"
               disabled={isLoading || !email || !password}
-              className="w-full mt-8 rounded-xl bg-red-600 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-500 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+              className="w-full mt-8 rounded-xl bg-violet-600 py-4 text-[15px] font-bold text-white shadow-lg shadow-violet-600/20 transition-all hover:bg-violet-500 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2"
             >
               {isLoading ? (
                 <>

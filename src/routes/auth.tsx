@@ -36,9 +36,9 @@ function GoogleIcon() {
 
 const inputWrapperClass = "relative";
 const inputClass =
-  "w-full rounded-xl border border-border/60 bg-input/60 py-3.5 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/20 focus:bg-input/80";
-const iconClass =
-  "absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-red-500";
+  "w-full rounded-xl border border-border/60 bg-input/60 py-3.5 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 focus:bg-input/80";
+const ICON_BASE_CLASS =
+  "absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-violet-500";
 
 function AuthPage() {
   const router = useRouter();
@@ -106,8 +106,8 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background glow effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-600/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-violet-600/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Back button */}
       <div className="absolute top-6 left-6 z-10 hidden sm:block">
@@ -124,10 +124,10 @@ function AuthPage() {
         {/* Logo Section */}
         <div className="flex justify-center mb-8">
           <Link to="/" className="flex items-center gap-2">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-red-600 to-orange-500 text-white shadow-[0_0_30px_-5px_rgba(220,38,38,0.5)]">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-purple-500 text-white shadow-[0_0_30px_-5px_rgba(139,92,246,0.5)]">
               <Gamepad2 className="h-7 w-7" />
             </span>
-            <span className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
+            <span className="text-2xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">
               NeonTopUp
             </span>
           </Link>
@@ -139,7 +139,7 @@ function AuthPage() {
           <div className="flex p-1.5 bg-background/80 rounded-2xl mb-8 relative border border-border/40">
             {/* Active pill background */}
             <div
-              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-red-600 to-orange-500 rounded-xl shadow-lg transition-all duration-300 ease-out
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-gradient-to-r from-violet-600 to-purple-500 rounded-xl shadow-lg transition-all duration-300 ease-out
                 ${activeTab === "login" ? "left-1.5" : "left-[calc(50%+4.5px)]"}
               `}
             />
@@ -206,7 +206,7 @@ function AuthPage() {
                     <div className="mt-2 text-right">
                       <a
                         href="#"
-                        className="text-xs font-semibold text-red-500 hover:text-red-400 transition-colors"
+                        className="text-xs font-semibold text-violet-500 hover:text-violet-400 transition-colors"
                       >
                         Lupa Password?
                       </a>
@@ -215,13 +215,13 @@ function AuthPage() {
                 </div>
 
                 {loginError && (
-                  <p className="text-sm font-semibold text-red-500 text-center">{loginError}</p>
+                  <p className="text-sm font-semibold text-violet-500 text-center">{loginError}</p>
                 )}
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-violet-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -302,7 +302,7 @@ function AuthPage() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full mt-6 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 py-4 text-[15px] font-bold text-white shadow-lg shadow-violet-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>

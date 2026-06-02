@@ -148,11 +148,11 @@ function LacakPage() {
 
         {/* Title area */}
         <div className="mt-8 text-center">
-          <div className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-red-600/20 to-orange-500/20 border border-red-500/30 shadow-[0_0_40px_-10px_rgba(220,38,38,0.5)]">
-            <FileSearch className="h-10 w-10 text-red-500" />
+          <div className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-violet-600/20 to-purple-500/20 border border-violet-500/30 shadow-[0_0_40px_-10px_rgba(139,92,246,0.5)]">
+            <FileSearch className="h-10 w-10 text-violet-500" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-            Cek Status <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">Pesananmu</span>
+            Cek Status <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">Pesananmu</span>
           </h1>
           <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
             Masukkan nomor invoice untuk mengetahui progres Top Up atau Joki Anda secara real-time.
@@ -170,13 +170,13 @@ function LacakPage() {
               placeholder="Contoh: INV-123456 atau INV-JK-12345"
               value={invoice}
               onChange={(e) => setInvoice(e.target.value)}
-              className="w-full rounded-2xl border border-border/60 bg-input/60 py-4 pl-12 pr-4 text-center text-lg font-bold tracking-wider text-foreground placeholder:text-muted-foreground/50 placeholder:font-normal uppercase outline-none transition-all focus:border-red-500 focus:ring-4 focus:ring-red-500/20"
+              className="w-full rounded-2xl border border-border/60 bg-input/60 py-4 pl-12 pr-4 text-center text-lg font-bold tracking-wider text-foreground placeholder:text-muted-foreground/50 placeholder:font-normal uppercase outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20"
             />
           </div>
           <button
             type="submit"
             disabled={isLoading || !invoice.trim()}
-            className="mt-4 w-full rounded-2xl bg-gradient-to-r from-red-600 to-orange-500 py-4 text-base font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="mt-4 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-purple-500 py-4 text-base font-bold text-white shadow-lg shadow-violet-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <>
@@ -207,7 +207,7 @@ function LacakPage() {
             {/* Status Card */}
             <section className="rounded-2xl border border-border/60 bg-card/80 p-5 shadow-xl backdrop-blur-sm relative overflow-hidden">
               {/* Decorative accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/10 rounded-full blur-3xl -mr-10 -mt-10" />
 
               {/* Order type badge */}
               <div className="mb-3">
@@ -276,7 +276,7 @@ function LacakPage() {
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs mb-1">Total Harga</p>
-                  <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
+                  <p className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">
                     {formatRupiah(searchResult.total_price)}
                   </p>
                 </div>
@@ -350,7 +350,7 @@ function LacakPage() {
            ═══════════════════════════════════════════ */}
         <section className="mt-10 rounded-2xl border border-border/40 bg-secondary/30 p-5 text-center">
           <p className="text-sm text-foreground mb-4">
-            Pesanan belum masuk lebih dari <span className="font-bold text-red-400">10 menit</span>? Hubungi Admin kami via WhatsApp
+            Pesanan belum masuk lebih dari <span className="font-bold text-violet-400">10 menit</span>? Hubungi Admin kami via WhatsApp
           </p>
           <a
             href="https://wa.me/6281234567890"

@@ -195,7 +195,7 @@ export function Navbar() {
                   {user.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border/60" />
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 hover:text-red-400 hover:bg-red-500/10 cursor-pointer">
+                <DropdownMenuItem onClick={handleLogout} className="text-violet-500 hover:text-violet-400 hover:bg-violet-500/10 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Keluar</span>
                 </DropdownMenuItem>
@@ -243,7 +243,7 @@ export function Navbar() {
                       handleLogout();
                     }}
                     variant="outline"
-                    className="mt-2 w-full text-red-500 border-red-500/20 hover:bg-red-500/10 justify-start"
+                    className="mt-2 w-full text-violet-500 border-violet-500/20 hover:bg-violet-500/10 justify-start"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Keluar

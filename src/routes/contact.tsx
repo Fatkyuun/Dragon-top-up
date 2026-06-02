@@ -120,7 +120,7 @@ function ContactPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="name" className="text-sm font-medium text-muted-foreground">Nama Pengguna <span className="text-red-500">*</span></label>
+                  <label htmlFor="name" className="text-sm font-medium text-muted-foreground">Nama Pengguna <span className="text-violet-500">*</span></label>
                   <input
                     id="name"
                     required
@@ -132,7 +132,7 @@ function ContactPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-sm font-medium text-muted-foreground">Email <span className="text-red-500">*</span></label>
+                  <label htmlFor="email" className="text-sm font-medium text-muted-foreground">Email <span className="text-violet-500">*</span></label>
                   <input
                     id="email"
                     required
@@ -158,7 +158,7 @@ function ContactPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label htmlFor="report_text" className="text-sm font-medium text-muted-foreground">Detail Keluhan / Laporan Bug <span className="text-red-500">*</span></label>
+                <label htmlFor="report_text" className="text-sm font-medium text-muted-foreground">Detail Keluhan / Laporan Bug <span className="text-violet-500">*</span></label>
                 <textarea
                   id="report_text"
                   required

@@ -66,7 +66,7 @@ export function HeroCarousel() {
     <section className="relative mx-auto mt-4 max-w-7xl px-4 sm:px-6">
       <div 
         className="relative overflow-hidden rounded-2xl border border-border/60 bg-card glow-neon"
-        style={{ backgroundImage: bannerBgUrl ? `url(${bannerBgUrl})` : 'var(--warna-marun-default)', backgroundSize: 'cover', backgroundPosition: 'center' }}
+        style={{ backgroundImage: bannerBgUrl ? `url(${bannerBgUrl})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {/* Lapisan Overlay Gelap */}
         {bannerBgUrl && (
