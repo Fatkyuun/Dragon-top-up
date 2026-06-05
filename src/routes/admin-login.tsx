@@ -25,13 +25,27 @@ function AdminLogin() {
     setError("");
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signInError) {
+      if (signInError || !data.user) {
         setError("Kredensial tidak valid");
+        return;
+      }
+
+      // Validasi Daftar Admin
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+
+      if (adminError || !adminData) {
+        await supabase.auth.signOut();
+        toast.error("Akses Ditolak: Akun Anda tidak terdaftar sebagai Admin");
+        setError("Akses Ditolak: Akun Anda tidak terdaftar sebagai Admin");
         return;
       }
 

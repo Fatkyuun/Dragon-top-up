@@ -70,13 +70,37 @@ function AdminDashboard() {
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
-    const isLoggedInSession = sessionStorage.getItem("isAdminLoggedIn");
-    const isLoggedInLocal = localStorage.getItem("isAdminLoggedIn");
-    if (isLoggedInSession !== "true" && isLoggedInLocal !== "true") {
-      router.navigate({ to: "/admin-login" });
-    } else {
+    const checkAdminAccess = async () => {
+      const isLoggedInSession = sessionStorage.getItem("isAdminLoggedIn");
+      const isLoggedInLocal = localStorage.getItem("isAdminLoggedIn");
+      
+      if (isLoggedInSession !== "true" && isLoggedInLocal !== "true") {
+        router.navigate({ to: "/admin-login" });
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        handleLogout();
+        return;
+      }
+
+      const { data: adminData, error } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !adminData) {
+        toast.error("Akses Ditolak: Anda tidak memiliki akses admin.");
+        handleLogout();
+        return;
+      }
+
       fetchOrders();
-    }
+    };
+
+    checkAdminAccess();
   }, []);
 
   const fetchOrders = async () => {
@@ -125,24 +149,52 @@ function AdminDashboard() {
     e.preventDefault();
     setIsSubmittingAdmin(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: newAdmin.email,
         password: newAdmin.password,
       });
-      if (error) throw error;
-      
-      // Attempt to insert to admins table directly, just in case trigger is not set
-      // We don't throw if this fails, because RLS might block it or Trigger might have done it
-      await supabase.from("admins").insert([{ email: newAdmin.email }]);
-      
-      toast.success("Admin berhasil ditambahkan!");
+      if (signUpError) throw signUpError;
+
+      if (!authData.user) {
+        throw new Error("Pendaftaran berhasil tapi data user tidak ditemukan.");
+      }
+
+      // Insert manual ke tabel admins (trigger sudah dihapus)
+      const { error: insertError } = await supabase
+        .from("admins")
+        .insert([{ id: authData.user.id, email: authData.user.email }]);
+
+      if (insertError) {
+        toast.error("Akun terdaftar, tapi gagal menyimpan ke tabel admin.", {
+          description: insertError.message,
+        });
+      } else {
+        toast.success("Admin berhasil ditambahkan!");
+      }
+
       setIsAddingAdmin(false);
       setNewAdmin({ email: "", password: "" });
-      fetchOrders(); // Refresh table
+      fetchOrders();
     } catch (err: any) {
       toast.error("Gagal mendaftarkan admin", { description: err.message });
     } finally {
       setIsSubmittingAdmin(false);
+    }
+  };
+
+  const handleDeleteAdmin = async (id: string, email: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin mencabut akses admin untuk email ${email}?`)) {
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.from("admins").delete().eq("id", id);
+      if (error) throw error;
+      
+      setAdmins((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Akses admin berhasil dicabut.");
+    } catch (err: any) {
+      toast.error("Gagal menghapus admin", { description: err.message });
     }
   };
 
@@ -1018,18 +1070,27 @@ function AdminDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm whitespace-nowrap">
                     <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
-                      <tr><th className="px-6 py-4">ID Admin</th><th className="px-6 py-4">Email</th><th className="px-6 py-4">Tgl. Terdaftar</th></tr>
+                      <tr><th className="px-6 py-4">ID Admin</th><th className="px-6 py-4">Email</th><th className="px-6 py-4">Tgl. Terdaftar</th><th className="px-6 py-4 text-right">Aksi</th></tr>
                     </thead>
                     <tbody className="divide-y divide-border/30">
                       {loading ? (
-                        <tr><td colSpan={3} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                        <tr><td colSpan={4} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
                       ) : admins.length === 0 ? (
-                        <tr><td colSpan={3} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada admin lain.</td></tr>
+                        <tr><td colSpan={4} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada admin lain.</td></tr>
                       ) : admins.map((a, i) => (
                         <tr key={a.id || i} className="hover:bg-white/5 transition-colors">
                           <td className="px-6 py-4 font-mono text-xs text-muted-foreground">{a.id}</td>
                           <td className="px-6 py-4 font-bold text-foreground">{a.email}</td>
                           <td className="px-6 py-4 text-xs text-muted-foreground">{formatDate(a.created_at)}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button
+                              onClick={() => handleDeleteAdmin(a.id, a.email)}
+                              className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors"
+                              title="Hapus Admin"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

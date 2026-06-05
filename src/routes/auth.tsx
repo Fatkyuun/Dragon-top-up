@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Gamepad2, ArrowLeft, Mail, Lock, User, Phone, Loader2 } from "lucide-react";
+import { Gamepad2, ArrowLeft, Mail, Lock, User, Phone, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -37,8 +37,12 @@ function GoogleIcon() {
 const inputWrapperClass = "relative";
 const inputClass =
   "w-full rounded-xl border border-border/60 bg-input/60 py-3.5 pl-11 pr-4 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 focus:bg-input/80";
-const ICON_BASE_CLASS =
+const inputClassPassword =
+  "w-full rounded-xl border border-border/60 bg-input/60 py-3.5 pl-11 pr-11 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none transition-all focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 focus:bg-input/80";
+const iconClass =
   "absolute left-4 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-muted-foreground transition-colors group-focus-within:text-violet-500";
+const toggleBtnClass =
+  "absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-lg text-muted-foreground hover:text-violet-400 transition-colors focus:outline-none cursor-pointer";
 
 function AuthPage() {
   const router = useRouter();
@@ -48,9 +52,14 @@ function AuthPage() {
   // Form State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [loginError, setLoginError] = useState("");
+
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +82,12 @@ function AuthPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      toast.error("Konfirmasi password tidak cocok!");
+      return;
+    }
+
     setIsLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
@@ -97,6 +112,7 @@ function AuthPage() {
         toast.success("Pendaftaran Berhasil! Silakan cek email untuk verifikasi (jika diaktifkan) atau langsung masuk.");
         setActiveTab("login");
         setPassword("");
+        setConfirmPassword("");
       }
     }
 
@@ -195,13 +211,22 @@ function AuthPage() {
                     <div className={`group ${inputWrapperClass}`}>
                       <Lock className={iconClass} />
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className={inputClass}
+                        className={inputClassPassword}
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className={toggleBtnClass}
+                        tabIndex={-1}
+                        aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      >
+                        {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                      </button>
                     </div>
                     <div className="mt-2 text-right">
                       <a
@@ -289,13 +314,43 @@ function AuthPage() {
                   <div className={`group ${inputWrapperClass}`}>
                     <Lock className={iconClass} />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="Password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className={inputClass}
+                      className={inputClassPassword}
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className={toggleBtnClass}
+                      tabIndex={-1}
+                      aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                      {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                    </button>
+                  </div>
+
+                  <div className={`group ${inputWrapperClass}`}>
+                    <Lock className={iconClass} />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Konfirmasi Password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className={inputClassPassword}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className={toggleBtnClass}
+                      tabIndex={-1}
+                      aria-label={showConfirmPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+                    </button>
                   </div>
                 </div>
 
