@@ -187,7 +187,7 @@ function AdminLogin() {
                 </div>
               </div>
               
-              <div className="flex justify-end">
+              <div className="mt-3 flex justify-end">
                 <button
                   type="button"
                   onClick={() => {

@@ -228,7 +228,7 @@ function AuthPage() {
                         {showPassword ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
                       </button>
                     </div>
-                    <div className="mt-2 text-right">
+                    <div className="mt-3 text-right">
                       <a
                         href="#"
                         className="text-xs font-semibold text-violet-500 hover:text-violet-400 transition-colors"

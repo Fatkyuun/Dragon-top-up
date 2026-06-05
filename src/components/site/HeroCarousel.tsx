@@ -29,10 +29,71 @@ export function HeroCarousel() {
         if (bannersRes.error) throw bannersRes.error;
         if (gamesRes.error) throw gamesRes.error;
         
-        setSlides(bannersRes.data || []);
+        const fetchedBanners = bannersRes.data || [];
+        if (fetchedBanners.length === 0) {
+          // Fallback Dummy Data if Supabase is empty
+          setSlides([
+            {
+              id: "dummy1",
+              title: "Promo Spesial Blood Strike",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/blood-strike",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Promo+Blood+Strike",
+              subtitle: "Promo spesial Top Up Blood Strike",
+              tag_text: "Promo",
+            },
+            {
+              id: "dummy2",
+              title: "Diskon Diamond Free Fire",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/free-fire",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Diskon+Free+Fire",
+              subtitle: "Dapatkan Diskon 50% Diamond",
+              tag_text: "Diskon",
+            },
+            {
+              id: "dummy3",
+              title: "Promo Garena Delta Force",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/garena-delta-force",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Garena+Delta+Force",
+              subtitle: "Top up murah, proses kilat!",
+              tag_text: "Promo",
+            },
+            {
+              id: "dummy4",
+              title: "Event Bonus Wild Cores",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/wild-rift",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Event+Wild+Cores",
+              subtitle: "Bonus ekstra Wild Cores minggu ini",
+              tag_text: "Event",
+            },
+            {
+              id: "dummy5",
+              title: "Diskon Diamond MLBB",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/mobile-legends",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Diskon+MLBB",
+              subtitle: "Promo Starlight & Diamond Pass",
+              tag_text: "Diskon",
+            },
+            {
+              id: "dummy6",
+              title: "Promo Polychrome ZZZ",
+              button_text: "Top Up Sekarang",
+              button_link: "/topup/zenless-zone-zero",
+              image_url: "https://placehold.co/1200x400/16161a/8b5cf6?text=Promo+ZZZ",
+              subtitle: "Gacha hemat tanpa nguras dompet",
+              tag_text: "Promo",
+            }
+          ]);
+        } else {
+          setSlides(fetchedBanners);
+        }
         setHeroGames(gamesRes.data || []);
       } catch (err) {
-        console.error("Error fetching banners:", err);
+        // silently handled
       } finally {
         setIsLoading(false);
       }
@@ -113,7 +174,7 @@ export function HeroCarousel() {
                 variant="outline"
                 className="border border-white/20 bg-secondary/40 hover:bg-secondary h-auto py-2.5 px-5 text-sm md:py-3 md:px-6 md:text-base w-fit"
               >
-                <Link to="/lacak">Lacak Pesanan</Link>
+                <Link to="/lacak" search={{ invoice: "" }}>Lacak Pesanan</Link>
               </Button>
             </div>
 

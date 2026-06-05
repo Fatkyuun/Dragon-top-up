@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
   ArrowLeft,
@@ -88,7 +88,7 @@ function LacakPage() {
       // Not found in either table
       setSearchResult(null);
     } catch (err) {
-      console.error(err);
+      // silently handled
       setSearchResult(null);
     } finally {
       setIsLoading(false);

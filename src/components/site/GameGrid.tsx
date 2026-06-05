@@ -21,7 +21,7 @@ export function GameGrid() {
         if (error) throw error;
         setGames(data || []);
       } catch (err) {
-        console.error("Error fetching games:", err);
+        // silently handled
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +96,7 @@ export function GameGrid() {
                 </div>
 
                 {/* Bottom gradient + name */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 pt-10">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
                   <h3 className="line-clamp-2 text-sm font-semibold text-white">{g.name}</h3>
                   <p className="mt-0.5 text-[11px] text-white/70">Top Up & Joki</p>
                 </div>

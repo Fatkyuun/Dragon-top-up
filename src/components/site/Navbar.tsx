@@ -1,5 +1,5 @@
-import { Link, useRouter } from "@tanstack/react-router";
-import { Search, Menu, Gamepad2, X, User, LogOut, ChevronDown, Loader2 } from "lucide-react";
+import { Link, useRouter, useLocation } from "@tanstack/react-router";
+import { Search, Menu, Gamepad2, User, LogOut, ChevronDown, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
+  const location = useLocation();
 
   // ── Live Search State ──
   const [searchQuery, setSearchQuery] = useState("");
@@ -67,7 +68,7 @@ export function Navbar() {
         setSearchResults(data || []);
         setIsDropdownOpen(true);
       } catch (err) {
-        console.error("Search error:", err);
+        // silently handled
       } finally {
         setIsSearching(false);
       }
@@ -168,15 +169,18 @@ export function Navbar() {
         {/* Desktop nav & CTA */}
         <div className="hidden lg:flex items-center gap-8">
           <nav className="flex items-center gap-8">
-            {navItems.map((item) => (
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href));
+              return (
               <Link
                 key={item.label}
                 to={item.href}
-                className="text-[15px] font-semibold text-muted-foreground transition-all hover:text-foreground hover:scale-[1.02]"
+                className={`text-[15px] transition-all hover:scale-[1.02] ${isActive ? "text-violet-500 font-bold" : "text-muted-foreground font-semibold hover:text-foreground"}`}
               >
                 {item.label}
               </Link>
-            ))}
+              );
+            })}
           </nav>
 
           {user ? (
@@ -221,16 +225,19 @@ export function Navbar() {
           <SheetContent side="right" className="w-72 bg-card border-border">
             <SheetTitle className="text-gradient-neon">Menu</SheetTitle>
             <nav className="mt-6 flex flex-col gap-1">
-              {navItems.map((item) => (
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.href || (item.href !== "/" && location.pathname.startsWith(item.href));
+                return (
                 <Link
                   key={item.label}
                   to={item.href}
                   onClick={() => setOpen(false)}
-                  className="rounded-md px-3 py-2.5 text-base font-medium text-foreground transition-colors hover:bg-secondary"
+                  className={`rounded-md px-3 py-2.5 text-base font-medium transition-colors hover:bg-secondary ${isActive ? "text-violet-500" : "text-foreground"}`}
                 >
                   {item.label}
                 </Link>
-              ))}
+                );
+              })}
               {user ? (
                 <>
                   <div className="mt-4 p-3 rounded-xl bg-secondary/30 border border-border/40">

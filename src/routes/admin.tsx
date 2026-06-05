@@ -64,6 +64,7 @@ function AdminDashboard() {
   // Search states
   const [searchGameQuery, setSearchGameQuery] = useState("");
   const [searchPackageQuery, setSearchPackageQuery] = useState("");
+  const [searchOrderQuery, setSearchOrderQuery] = useState("");
 
   const [currentPageGames, setCurrentPageGames] = useState(1);
   const [currentPageProducts, setCurrentPageProducts] = useState(1);
@@ -127,7 +128,7 @@ function AdminDashboard() {
         setAdmins([{ id: "dummy-1", email: "admin@neon.com", created_at: new Date().toISOString() }]);
       }
     } catch (err) {
-      console.error(err);
+      // silently handled
     } finally {
       setLoading(false);
     }
@@ -137,7 +138,7 @@ function AdminDashboard() {
     try {
       await supabase.auth.signOut();
     } catch (err) {
-      console.error("Gagal sign out dari Supabase:", err);
+      // silently handled
     }
     sessionStorage.removeItem("isAdminLoggedIn");
     localStorage.removeItem("isAdminLoggedIn");
@@ -408,6 +409,7 @@ function AdminDashboard() {
     { value: "menunggu_pembayaran", label: "Menunggu" },
     { value: "sedang_diproses", label: "Diproses" },
     { value: "selesai", label: "Selesai" },
+    { value: "batal", label: "Batal" },
   ];
 
   /* ── Dashboard stats ── */
@@ -433,16 +435,33 @@ function AdminDashboard() {
   const totalProductsPages = Math.max(1, Math.ceil(filteredPackages.length / ITEMS_PER_PAGE));
   const paginatedPackages = filteredPackages.slice((currentPageProducts - 1) * ITEMS_PER_PAGE, currentPageProducts * ITEMS_PER_PAGE);
 
+
+  const getStatusColor = (status: string) => {
+    const s = status?.toLowerCase() || "menunggu_pembayaran";
+    if (s.includes("selesai")) return "bg-green-500/10 border-green-500/30 text-green-500 hover:bg-green-500/20";
+    if (s.includes("proses")) return "bg-purple-500/10 border-purple-500/30 text-purple-500 hover:bg-purple-500/20";
+    if (s.includes("batal")) return "bg-red-500/10 border-red-500/30 text-red-500 hover:bg-red-500/20";
+    return "bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20";
+  };
+
+  const StatusBadge = ({ status, label }: { status: string; label?: string }) => {
+    const defaultLabel = status?.toLowerCase().includes("selesai") ? "Selesai" 
+      : status?.toLowerCase().includes("proses") ? "Diproses" 
+      : status?.toLowerCase().includes("batal") ? "Batal" 
+      : "Menunggu";
+    return (
+      <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase border ${getStatusColor(status)}`}>
+        {label || defaultLabel}
+      </span>
+    );
+  };
+
   const StatusDropdown = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
     <div className="relative inline-block w-40">
       <select
         value={value || "menunggu_pembayaran"}
         onChange={(e) => onChange(e.target.value)}
-        className={`w-full appearance-none rounded-lg border pl-3 pr-8 py-1.5 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition-all focus:ring-2 focus:ring-primary/50 shadow-sm ${
-          value === "selesai" ? "bg-green-500/10 border-green-500/30 text-green-500 hover:bg-green-500/20"
-          : value === "sedang_diproses" ? "bg-yellow-500/10 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20"
-          : "bg-violet-500/10 border-violet-500/30 text-violet-500 hover:bg-violet-500/20"
-        }`}
+        className={`w-full appearance-none rounded-lg border pl-3 pr-8 py-1.5 text-xs font-bold uppercase tracking-wider outline-none cursor-pointer transition-all focus:ring-2 focus:ring-primary/50 shadow-sm ${getStatusColor(value)}`}
       >
         {statusOptions.map((opt) => (<option key={opt.value} value={opt.value} className="bg-card text-foreground">{opt.label}</option>))}
       </select>
@@ -451,6 +470,18 @@ function AdminDashboard() {
       </div>
     </div>
   );
+
+  const filteredTopupOrders = orders.filter(o => {
+    if (!searchOrderQuery) return true;
+    const q = searchOrderQuery.toLowerCase();
+    return (o.invoice_id?.toLowerCase().includes(q) || o.whatsapp_buyer?.toLowerCase().includes(q));
+  });
+
+  const filteredJokiOrders = jokiOrders.filter(o => {
+    if (!searchOrderQuery) return true;
+    const q = searchOrderQuery.toLowerCase();
+    return (o.invoice_id?.toLowerCase().includes(q) || o.whatsapp_buyer?.toLowerCase().includes(q));
+  });
 
   const pageTitle =
     activeMenu === "topup" ? "Manajemen Pesanan Top Up"
@@ -546,17 +577,13 @@ function AdminDashboard() {
                       ) : recentOrders.length === 0 ? (
                         <tr><td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">Belum ada pesanan.</td></tr>
                       ) : recentOrders.map((o) => {
-                        const done = o.status?.toLowerCase() === "selesai";
-                        const waiting = o.status?.toLowerCase().includes("menunggu") || !o.status;
                         return (
                           <tr key={o.invoice_id} className="hover:bg-white/5 transition-colors">
                             <td className="px-6 py-4 text-muted-foreground text-xs">{formatDate(o.created_at)}</td>
                             <td className="px-6 py-4 font-bold">{o.game_name || "Game"} <span className="font-normal text-muted-foreground">({o.nominal || "Paket"})</span></td>
                             <td className="px-6 py-4 text-green-500 font-semibold">{formatRupiah(o.total_price)}</td>
                             <td className="px-6 py-4">
-                              <span className={`px-2.5 py-1 rounded-md text-xs font-bold uppercase border ${done ? "bg-green-500/10 text-green-500 border-green-500/20" : waiting ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"}`}>
-                                {done ? "Selesai" : waiting ? "Menunggu" : "Diproses"}
-                              </span>
+                              <StatusBadge status={o.status} />
                             </td>
                           </tr>
                         );
@@ -611,60 +638,88 @@ function AdminDashboard() {
 
           {/* ═══ TOPUP ORDERS ═══ */}
           {activeMenu === "topup" && (
-            <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden relative animate-in fade-in duration-300">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
-                    <tr><th className="px-6 py-4">Tanggal</th><th className="px-6 py-4">Invoice</th><th className="px-6 py-4">Game</th><th className="px-6 py-4">Nominal</th><th className="px-6 py-4">WhatsApp</th><th className="px-6 py-4">Harga</th><th className="px-6 py-4">Status</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {loading ? (
-                      <tr><td colSpan={7} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                    ) : orders.length === 0 ? (
-                      <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada pesanan yang masuk.</td></tr>
-                    ) : orders.map((o) => (
-                      <tr key={o.invoice_id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 text-muted-foreground text-xs">{formatDate(o.created_at)}</td>
-                        <td className="px-6 py-4 font-bold">{o.invoice_id}</td>
-                        <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p><p className="text-xs text-muted-foreground mt-0.5">ID: {o.user_id_game} {o.zone_id_game ? `(${o.zone_id_game})` : ""}</p></td>
-                        <td className="px-6 py-4 font-semibold text-primary">{o.nominal}</td>
-                        <td className="px-6 py-4 text-muted-foreground font-medium">{o.whatsapp_buyer}</td>
-                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
-                        <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleTopupStatusChange(o.invoice_id, v)} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Cari Invoice atau WhatsApp..."
+                    value={searchOrderQuery}
+                    onChange={(e) => setSearchOrderQuery(e.target.value)}
+                    className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+              <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden relative">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                      <tr><th className="px-6 py-4">Tanggal</th><th className="px-6 py-4">Invoice</th><th className="px-6 py-4">Game</th><th className="px-6 py-4">Nominal</th><th className="px-6 py-4">WhatsApp</th><th className="px-6 py-4">Harga</th><th className="px-6 py-4">Aksi</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {loading ? (
+                        <tr><td colSpan={7} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                      ) : filteredTopupOrders.length === 0 ? (
+                        <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada pesanan yang masuk.</td></tr>
+                      ) : filteredTopupOrders.map((o) => (
+                        <tr key={o.invoice_id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-muted-foreground text-xs">{formatDate(o.created_at)}</td>
+                          <td className="px-6 py-4 font-bold">{o.invoice_id}</td>
+                          <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p><p className="text-xs text-muted-foreground mt-0.5">ID: {o.user_id_game} {o.zone_id_game ? `(${o.zone_id_game})` : ""}</p></td>
+                          <td className="px-6 py-4 font-semibold text-primary">{o.nominal}</td>
+                          <td className="px-6 py-4 text-muted-foreground font-medium">{o.whatsapp_buyer}</td>
+                          <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
+                          <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleTopupStatusChange(o.invoice_id, v)} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
 
           {/* ═══ JOKI ORDERS ═══ */}
           {activeMenu === "joki" && (
-            <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden relative animate-in fade-in duration-300">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
-                    <tr><th className="px-6 py-4">Tanggal</th><th className="px-6 py-4">Invoice</th><th className="px-6 py-4">Game</th><th className="px-6 py-4">Nickname</th><th className="px-6 py-4">Detail Joki</th><th className="px-6 py-4">Harga</th><th className="px-6 py-4">Status</th></tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/30">
-                    {loading ? (
-                      <tr><td colSpan={7} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
-                    ) : jokiOrders.length === 0 ? (
-                      <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada pesanan joki yang masuk.</td></tr>
-                    ) : jokiOrders.map((o) => (
-                      <tr key={o.invoice_id} className="hover:bg-white/5 transition-colors">
-                        <td className="px-6 py-4 text-muted-foreground text-xs">{formatDate(o.created_at)}</td>
-                        <td className="px-6 py-4 font-bold">{o.invoice_id}</td>
-                        <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p></td>
-                        <td className="px-6 py-4 font-semibold text-primary">{o.nickname_game}</td>
-                        <td className="px-6 py-4"><p className="font-bold text-sm">{o.target_rank}</p><p className="text-xs text-muted-foreground mt-0.5">Login: {o.login_via}</p></td>
-                        <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
-                        <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleJokiStatusChange(o.invoice_id, v)} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="relative w-full sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Cari Invoice atau WhatsApp..."
+                    value={searchOrderQuery}
+                    onChange={(e) => setSearchOrderQuery(e.target.value)}
+                    className="w-full h-10 pl-9 pr-4 rounded-full border border-border/60 bg-input/40 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
+                  />
+                </div>
+              </div>
+              <div className="rounded-[20px] border border-border/50 bg-card/40 backdrop-blur-md shadow-2xl overflow-hidden relative">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-secondary/30 text-muted-foreground border-b border-border/50 uppercase tracking-wider text-[11px] font-bold">
+                      <tr><th className="px-6 py-4">Tanggal</th><th className="px-6 py-4">Invoice</th><th className="px-6 py-4">Game</th><th className="px-6 py-4">Nickname</th><th className="px-6 py-4">Detail Joki</th><th className="px-6 py-4">Harga</th><th className="px-6 py-4">Aksi</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/30">
+                      {loading ? (
+                        <tr><td colSpan={7} className="px-6 py-12 text-center"><RefreshCcw className="h-6 w-6 animate-spin text-muted-foreground mx-auto mb-3" /><p className="text-muted-foreground font-medium">Memuat data...</p></td></tr>
+                      ) : filteredJokiOrders.length === 0 ? (
+                        <tr><td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-medium">Belum ada pesanan joki yang masuk.</td></tr>
+                      ) : filteredJokiOrders.map((o) => (
+                        <tr key={o.invoice_id} className="hover:bg-white/5 transition-colors">
+                          <td className="px-6 py-4 text-muted-foreground text-xs">{formatDate(o.created_at)}</td>
+                          <td className="px-6 py-4 font-bold">{o.invoice_id}</td>
+                          <td className="px-6 py-4"><p className="font-bold text-sm">{o.game_name}</p></td>
+                          <td className="px-6 py-4 font-semibold text-primary">{o.nickname_game}</td>
+                          <td className="px-6 py-4"><p className="font-bold text-sm">{o.target_rank}</p><p className="text-xs text-muted-foreground mt-0.5">Login: {o.login_via}</p></td>
+                          <td className="px-6 py-4 font-bold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(o.total_price)}</td>
+                          <td className="px-6 py-4"><StatusDropdown value={o.status} onChange={(v) => handleJokiStatusChange(o.invoice_id, v)} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}

@@ -62,7 +62,7 @@ function TopUpDetailPage() {
         if (gameRes.data) setGame(gameRes.data);
         if (packRes.data) setPackages(packRes.data);
       } catch (err) {
-        console.error("Error fetching detail:", err);
+        // silently handled
       } finally {
         setIsLoadingData(false);
       }
@@ -117,10 +117,9 @@ function TopUpDetailPage() {
       toast.success("Pesanan berhasil disimpan!", {
         description: `Nomor Invoice: ${invoiceId}`,
       });
-      router.navigate({ to: "/lacak" });
+      router.navigate({ to: "/lacak", search: { invoice: "" } });
     } catch (err) {
-      console.error("Supabase Insert Error:", err);
-      console.log(err);
+      // silently handled
       toast.error("Gagal menyimpan pesanan", {
         description: "Silakan coba beberapa saat lagi.",
       });

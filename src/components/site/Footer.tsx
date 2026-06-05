@@ -3,9 +3,9 @@ import { Link } from "@tanstack/react-router";
 
 const paymentMethods = ["QRIS", "GoPay", "DANA", "OVO", "ShopeePay", "BCA", "BNI", "Mandiri"];
 const quickLinks = [
-  { label: "Syarat & Ketentuan", href: "/" },
-  { label: "Kebijakan Privasi", href: "/" },
-  { label: "FAQ", href: "/" },
+  { label: "Syarat & Ketentuan", href: "/terms" },
+  { label: "Kebijakan Privasi", href: "/privacy" },
+  { label: "FAQ", href: "/faq" },
   { label: "Hubungi Kami & Laporan", href: "/contact" },
 ];
 

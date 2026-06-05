@@ -93,7 +93,7 @@ function JokiDetailPage() {
         if (gameRes.data) setGame(gameRes.data);
         if (packRes.data) setPackages(packRes.data);
       } catch (err) {
-        console.error("Error fetching joki data:", err);
+        // silently handled
       } finally {
         setIsLoadingData(false);
       }
@@ -159,7 +159,7 @@ function JokiDetailPage() {
       });
 
       if (error) {
-        console.error("Supabase Insert Error:", error);
+
         toast.error("Gagal menyimpan pesanan", {
           description: error.message || "Silakan coba beberapa saat lagi.",
         });
@@ -176,7 +176,7 @@ function JokiDetailPage() {
         search: { invoice: invoiceId },
       });
     } catch (err) {
-      console.error("Checkout error:", err);
+      // silently handled
       toast.error("Gagal menyimpan pesanan", {
         description: "Terjadi kesalahan. Silakan coba lagi.",
       });

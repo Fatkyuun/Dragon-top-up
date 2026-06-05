@@ -10,8 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UpdatePasswordRouteImport } from './routes/update-password'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LacakRouteImport } from './routes/lacak'
 import { Route as JokiRouteImport } from './routes/joki'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminLoginRouteImport } from './routes/admin-login'
@@ -26,6 +29,16 @@ const UpdatePasswordRoute = UpdatePasswordRouteImport.update({
   path: '/update-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LacakRoute = LacakRouteImport.update({
   id: '/lacak',
   path: '/lacak',
@@ -34,6 +47,11 @@ const LacakRoute = LacakRouteImport.update({
 const JokiRoute = JokiRouteImport.update({
   id: '/joki',
   path: '/joki',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -83,8 +101,11 @@ export interface FileRoutesByFullPath {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
@@ -96,7 +117,10 @@ export interface FileRoutesByTo {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/lacak': typeof LacakRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
@@ -109,8 +133,11 @@ export interface FileRoutesById {
   '/admin-login': typeof AdminLoginRoute
   '/auth': typeof AuthRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/joki': typeof JokiRouteWithChildren
   '/lacak': typeof LacakRoute
+  '/privacy': typeof PrivacyRoute
+  '/terms': typeof TermsRoute
   '/update-password': typeof UpdatePasswordRoute
   '/joki/$slug': typeof JokiSlugRoute
   '/topup/$slug': typeof TopupSlugRoute
@@ -124,8 +151,11 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/joki'
     | '/lacak'
+    | '/privacy'
+    | '/terms'
     | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
@@ -137,7 +167,10 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/lacak'
+    | '/privacy'
+    | '/terms'
     | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
@@ -149,8 +182,11 @@ export interface FileRouteTypes {
     | '/admin-login'
     | '/auth'
     | '/contact'
+    | '/faq'
     | '/joki'
     | '/lacak'
+    | '/privacy'
+    | '/terms'
     | '/update-password'
     | '/joki/$slug'
     | '/topup/$slug'
@@ -163,8 +199,11 @@ export interface RootRouteChildren {
   AdminLoginRoute: typeof AdminLoginRoute
   AuthRoute: typeof AuthRoute
   ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   JokiRoute: typeof JokiRouteWithChildren
   LacakRoute: typeof LacakRoute
+  PrivacyRoute: typeof PrivacyRoute
+  TermsRoute: typeof TermsRoute
   UpdatePasswordRoute: typeof UpdatePasswordRoute
   TopupSlugRoute: typeof TopupSlugRoute
 }
@@ -176,6 +215,20 @@ declare module '@tanstack/react-router' {
       path: '/update-password'
       fullPath: '/update-password'
       preLoaderRoute: typeof UpdatePasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lacak': {
@@ -190,6 +243,13 @@ declare module '@tanstack/react-router' {
       path: '/joki'
       fullPath: '/joki'
       preLoaderRoute: typeof JokiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -269,8 +329,11 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLoginRoute: AdminLoginRoute,
   AuthRoute: AuthRoute,
   ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   JokiRoute: JokiRouteWithChildren,
   LacakRoute: LacakRoute,
+  PrivacyRoute: PrivacyRoute,
+  TermsRoute: TermsRoute,
   UpdatePasswordRoute: UpdatePasswordRoute,
   TopupSlugRoute: TopupSlugRoute,
 }

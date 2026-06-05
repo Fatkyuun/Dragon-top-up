@@ -47,7 +47,7 @@ function ContactPage() {
         screenshot_link: "",
       });
     } catch (err: any) {
-      console.error("Error submitting report:", err);
+      // silently handled
       toast.error("Gagal mengirim laporan", {
         description: err.message || "Terjadi kesalahan pada sistem.",
       });
