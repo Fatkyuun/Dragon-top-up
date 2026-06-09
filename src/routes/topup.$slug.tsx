@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Zap, Diamond, CreditCard, CheckCircle2, X, ShieldCheck, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -48,6 +48,7 @@ function TopUpDetailPage() {
   const [zoneId, setZoneId] = useState("");
   const [whatsappBuyer, setWhatsappBuyer] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -96,13 +97,35 @@ function TopUpDetailPage() {
     );
   }
 
-  const handleCheckout = async () => {
-    if (!selectedPackage || !selectedPayment || !userId || !whatsappBuyer) return;
-    
+  // ── Validasi form & buka modal ──
+  const handleOpenModal = () => {
+    if (!userId.trim()) {
+      toast.error("Data Akun belum lengkap", { description: `Masukkan ${game?.id_label || "User ID"} terlebih dahulu.` });
+      return;
+    }
+    if (!selectedPackage) {
+      toast.error("Nominal belum dipilih", { description: "Pilih nominal top up yang diinginkan." });
+      return;
+    }
+    if (!selectedPayment) {
+      toast.error("Metode Pembayaran belum dipilih", { description: "Pilih salah satu metode pembayaran." });
+      return;
+    }
+    if (!whatsappBuyer.trim()) {
+      toast.error("Nomor WhatsApp kosong", { description: "Masukkan nomor WhatsApp untuk notifikasi pesanan." });
+      return;
+    }
+    setIsModalOpen(true);
+  };
+
+  // ── Konfirmasi & kirim ke Supabase ──
+  const handleConfirmOrder = async () => {
+    if (!selectedPackage || !selectedPayment) return;
+
     setIsSubmitting(true);
     try {
-      const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`; 
-      
+      const invoiceId = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
+
       const { error } = await supabase.from("topup_orders").insert({
         invoice_id: invoiceId,
         game_name: gameName,
@@ -114,12 +137,14 @@ function TopUpDetailPage() {
         total_price: selectedPrice,
       });
 
+      if (error) throw error;
+
+      setIsModalOpen(false);
       toast.success("Pesanan berhasil disimpan!", {
         description: `Nomor Invoice: ${invoiceId}`,
       });
-      router.navigate({ to: "/lacak", search: { invoice: "" } });
+      router.navigate({ to: "/lacak", search: { invoice: invoiceId } });
     } catch (err) {
-      // silently handled
       toast.error("Gagal menyimpan pesanan", {
         description: "Silakan coba beberapa saat lagi.",
       });
@@ -127,6 +152,8 @@ function TopUpDetailPage() {
       setIsSubmitting(false);
     }
   };
+
+  const selectedPaymentMethod = defaultPaymentMethods.find(p => p.id === selectedPayment);
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-28">
@@ -366,21 +393,114 @@ function TopUpDetailPage() {
           </div>
           <button
             type="button"
-            onClick={handleCheckout}
-            disabled={!selectedPackage || !selectedPayment || !userId || !whatsappBuyer || isSubmitting}
-            className="shrink-0 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:opacity-90 hover:shadow-[0_0_24px_-4px_var(--neon-purple)] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
+            onClick={handleOpenModal}
+            className="shrink-0 rounded-xl bg-gradient-neon px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg transition-all hover:opacity-90 hover:shadow-[0_0_24px_-4px_var(--neon-purple)] active:scale-[0.97]"
           >
-            {isSubmitting ? (
-              "Memproses..."
-            ) : (
-              <>
-                <CreditCard className="mr-1.5 inline-block h-4 w-4 -mt-0.5" />
-                Beli Sekarang
-              </>
-            )}
+            <CreditCard className="mr-1.5 inline-block h-4 w-4 -mt-0.5" />
+            Beli Sekarang
           </button>
         </div>
       </div>
+
+      {/* ═══════════════════════════════════════════
+          MODAL KONFIRMASI PESANAN
+         ═══════════════════════════════════════════ */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+            onClick={() => !isSubmitting && setIsModalOpen(false)}
+          />
+
+          {/* Modal Card */}
+          <div className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card shadow-2xl shadow-violet-900/20 animate-in fade-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-border/40 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-violet-500" />
+                <h3 className="text-lg font-bold text-foreground">Konfirmasi Pesanan</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSubmitting && setIsModalOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-secondary/80 hover:text-foreground transition-colors"
+                aria-label="Tutup modal"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Body — Order Summary */}
+            <div className="px-6 py-5 space-y-4">
+              <p className="text-sm text-muted-foreground">Pastikan detail pesanan sudah benar sebelum melanjutkan.</p>
+
+              <div className="rounded-xl border border-border/40 bg-secondary/20 divide-y divide-border/30 overflow-hidden">
+                {/* Game */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground">Game</span>
+                  <span className="text-sm font-bold text-foreground">{gameName}</span>
+                </div>
+                {/* User ID */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground">{game?.id_label || "User ID"}</span>
+                  <span className="text-sm font-semibold text-foreground">{userId}{zoneId ? ` (${zoneId})` : ""}</span>
+                </div>
+                {/* Item / Nominal */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground">Item / Nominal</span>
+                  <span className="text-sm font-semibold text-foreground">{selectedPackage?.item_name}</span>
+                </div>
+                {/* Pembayaran */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground">Pembayaran</span>
+                  <span className="text-sm font-semibold text-foreground">{selectedPaymentMethod?.icon} {selectedPaymentMethod?.name}</span>
+                </div>
+                {/* WhatsApp */}
+                <div className="flex items-center justify-between px-4 py-3">
+                  <span className="text-xs font-medium text-muted-foreground">WhatsApp</span>
+                  <span className="text-sm font-semibold text-foreground">{whatsappBuyer}</span>
+                </div>
+                {/* Total */}
+                <div className="flex items-center justify-between px-4 py-3 bg-violet-500/5">
+                  <span className="text-sm font-bold text-foreground">Total Harga</span>
+                  <span className="text-lg font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-violet-500 to-purple-400">{formatRupiah(selectedPrice)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer — Actions */}
+            <div className="flex items-center gap-3 border-t border-border/40 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl border border-border/60 bg-secondary/40 px-4 py-3 text-sm font-semibold text-foreground transition-all hover:bg-secondary/80 disabled:opacity-50"
+              >
+                Batalkan
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmOrder}
+                disabled={isSubmitting}
+                className="flex-1 rounded-xl bg-gradient-to-r from-violet-600 to-purple-500 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-violet-600/25 transition-all hover:opacity-90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4" />
+                    Konfirmasi Pembayaran
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
