@@ -15,6 +15,8 @@ export default defineConfig({
     server: { entry: "server" },
   },
   plugins: [
-    nitro(),
+    nitro({
+      preset: "vercel"
+    }),
   ],
 });

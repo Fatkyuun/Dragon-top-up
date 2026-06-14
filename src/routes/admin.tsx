@@ -617,10 +617,10 @@ function AdminDashboard() {
                           <div className="text-xs text-muted-foreground">{r.email}</div>
                         </td>
                         <td className="px-6 py-4 text-muted-foreground">{r.whatsapp || "-"}</td>
-                        <td className="px-6 py-4 max-w-[300px] truncate text-muted-foreground" title={r.report_text}>{r.report_text}</td>
+                        <td className="px-6 py-4 max-w-[300px] truncate text-muted-foreground" title={r.complaint}>{r.complaint}</td>
                         <td className="px-6 py-4">
-                          {r.screenshot_link ? (
-                            <a href={r.screenshot_link} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Lihat Bukti</a>
+                          {r.screenshot_url ? (
+                            <a href={r.screenshot_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Lihat Bukti</a>
                           ) : (
                             <span className="text-muted-foreground">-</span>
                           )}
