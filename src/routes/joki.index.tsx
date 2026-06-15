@@ -24,6 +24,8 @@ export const Route = createFileRoute("/joki/")({
 function JokiIndexPage() {
   const [jokiGames, setJokiGames] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12; // 12 item (2 baris x 6 kolom di desktop)
 
   useEffect(() => {
     const fetchJokiGames = async () => {
@@ -56,6 +58,11 @@ function JokiIndexPage() {
     };
     fetchJokiGames();
   }, []);
+
+  const totalPages = Math.ceil(jokiGames.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentGames = jokiGames.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
@@ -101,46 +108,83 @@ function JokiIndexPage() {
             <p>Belum ada layanan joki tersedia.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
-            {jokiGames.map((g) => (
-              <Link
-                key={g.slug}
-                to="/joki/$slug"
-                params={{ slug: g.slug }}
-                className="group relative block overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:border-primary/70 hover:shadow-[0_0_24px_-6px_var(--neon-purple)] hover:-translate-y-1"
-              >
-                <div className="aspect-[3/4] overflow-hidden">
-                  {g.image_url ? (
-                    <img
-                      src={g.image_url}
-                      alt={`Cover ${g.name}`}
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="h-full w-full bg-secondary/50 grid place-items-center">
-                      <Swords className="h-10 w-10 text-muted-foreground/50" />
-                    </div>
-                  )}
-                </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-6">
+              {currentGames.map((g) => (
+                <Link
+                  key={g.slug}
+                  to="/joki/$slug"
+                  params={{ slug: g.slug }}
+                  className="group relative block overflow-hidden rounded-xl border border-border/60 bg-card transition-all duration-300 hover:border-primary/70 hover:shadow-[0_0_24px_-6px_var(--neon-purple)] hover:-translate-y-1"
+                >
+                  <div className="aspect-[3/4] overflow-hidden">
+                    {g.image_url ? (
+                      <img
+                        src={g.image_url}
+                        alt={`Cover ${g.name}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-secondary/50 grid place-items-center">
+                        <Swords className="h-10 w-10 text-muted-foreground/50" />
+                      </div>
+                    )}
+                  </div>
 
-                {/* Tag */}
-                <span className="absolute left-2 top-2 rounded-md bg-violet-500/10 border border-violet-500/30 px-2 py-0.5 text-[10px] font-bold uppercase text-violet-400 backdrop-blur-md shadow-sm">
-                  Joki
-                </span>
+                  {/* Tag */}
+                  <span className="absolute left-2 top-2 rounded-md bg-violet-500/10 border border-violet-500/30 px-2 py-0.5 text-[10px] font-bold uppercase text-violet-400 backdrop-blur-md shadow-sm">
+                    Joki
+                  </span>
 
-                {/* Bottom gradient + name */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
-                  <h3 className="line-clamp-2 text-sm font-semibold text-white">
-                    {g.name}
-                  </h3>
-                  <p className="mt-0.5 text-[11px] text-white/70">
-                    Jasa Joki
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
+                  {/* Bottom gradient + name */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 pt-10">
+                    <h3 className="line-clamp-2 text-sm font-semibold text-white">
+                      {g.name}
+                    </h3>
+                    <p className="mt-0.5 text-[11px] text-white/70">
+                      Jasa Joki
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* PAGINATION */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex justify-center items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-md bg-[#16161a] border border-violet-500/30 text-violet-400 text-sm font-medium transition-colors hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Sebelumnya
+                </button>
+                
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`h-8 w-8 rounded-md flex items-center justify-center text-sm transition-colors ${
+                      currentPage === page
+                        ? "bg-violet-600 text-white font-bold"
+                        : "bg-[#16161a] border border-border/60 text-gray-300 hover:border-violet-500/50 hover:text-white"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded-md bg-[#16161a] border border-violet-500/30 text-violet-400 text-sm font-medium transition-colors hover:bg-violet-500/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
     </div>
